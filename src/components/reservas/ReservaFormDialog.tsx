@@ -35,7 +35,7 @@ interface ReservaFormDialogProps {
   aberto: boolean;
   aoFechar: () => void;
   reserva?: Reserva | null;
-  dataInicial?: string;
+  dataInicial?: string | undefined;
 }
 
 export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: ReservaFormDialogProps) {
