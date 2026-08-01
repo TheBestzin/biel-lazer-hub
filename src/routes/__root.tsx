@@ -2,15 +2,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  ClientOnly,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "react-hot-toast";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider } from "@/app/providers/AuthProvider";
+import { ThemeProvider } from "@/app/providers/ThemeProvider";
+import { AuthGate } from "@/components/app/AuthGate";
+import { TelaCarregamento } from "@/components/app/AppLoading";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
@@ -77,21 +84,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Área de Lazer Biel — Gestão de Reservas" },
+      {
+        name: "description",
+        content:
+          "Sistema completo para gerenciar reservas, clientes, agenda e finanças da Área de Lazer Biel.",
+      },
+      { name: "author", content: "Área de Lazer Biel" },
+      { property: "og:title", content: "Área de Lazer Biel — Gestão de Reservas" },
+      {
+        property: "og:description",
+        content: "Reservas, clientes, agenda e controle financeiro em um só lugar.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
@@ -102,7 +118,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
@@ -119,8 +135,25 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ClientOnly fallback={<TelaCarregamento />}>
+        <ThemeProvider>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <AuthGate>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+              </AuthGate>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  className:
+                    "!rounded-xl !border !border-border !bg-card !text-card-foreground !shadow-elevated",
+                }}
+              />
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ClientOnly>
     </QueryClientProvider>
   );
 }
