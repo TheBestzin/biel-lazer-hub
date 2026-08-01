@@ -2,15 +2,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  ClientOnly,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "react-hot-toast";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider } from "@/app/providers/AuthProvider";
+import { ThemeProvider } from "@/app/providers/ThemeProvider";
+import { AuthGate } from "@/components/app/AuthGate";
+import { TelaCarregamento } from "@/components/app/AppLoading";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
