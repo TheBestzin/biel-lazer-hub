@@ -152,7 +152,7 @@ export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: Re
             tipo: "receita",
             valor: diferenca,
             categoria: "Locação",
-            reservaId: reserva?.id,
+            ...(reserva ? { reservaId: reserva.id } : {}),
             descricao: `Pagamento — ${clienteSelecionado.nome}`,
             data: valores.data,
           },
