@@ -32,14 +32,13 @@ export const chaves = {
 
 function usarConsulta<T>(chave: QueryKey, fn: () => Promise<T>, vazio: T) {
   const { admin } = useAuth();
-  return useQuery({
+  const consulta = useQuery({
     queryKey: chave,
     queryFn: fn,
     enabled: firebaseConfigurado && Boolean(admin),
     staleTime: 60_000,
-    initialData: undefined,
-    placeholderData: vazio,
   });
+  return { ...consulta, data: (consulta.data ?? vazio) as T };
 }
 
 export const useClientes = (incluirExcluidos = false) =>
