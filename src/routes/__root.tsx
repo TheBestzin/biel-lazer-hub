@@ -111,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
@@ -128,8 +128,25 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ClientOnly fallback={<TelaCarregamento />}>
+        <ThemeProvider>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <AuthGate>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+              </AuthGate>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  className:
+                    "!rounded-xl !border !border-border !bg-card !text-card-foreground !shadow-elevated",
+                }}
+              />
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ClientOnly>
     </QueryClientProvider>
   );
 }
