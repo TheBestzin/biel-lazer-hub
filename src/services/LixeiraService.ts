@@ -1,5 +1,5 @@
 import { COLECOES, criar, listar, obter, removerDefinitivo, atualizar } from "@/firebase/firestore";
-import type { ItemLixeira, NomeColecaoLixeira } from "@/types/lixeira";
+import type { ItemLixeira } from "@/types";
 
 export const LixeiraService = {
   async mover(
