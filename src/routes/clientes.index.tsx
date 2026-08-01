@@ -29,7 +29,7 @@ import { mascararCPF, mascararTelefone } from "@/utils/documentos";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/clientes")({
+export const Route = createFileRoute("/clientes/")({
   head: () => ({
     meta: [
       { title: "Clientes — Área de Lazer Biel" },
