@@ -3,7 +3,7 @@ import type { ItemLixeira } from "@/types";
 
 export const LixeiraService = {
   async mover(
-    colecao: NomeColecaoLixeira,
+    colecao: string,
     documentoId: string,
     titulo: string,
     dados: Record<string, unknown>,
