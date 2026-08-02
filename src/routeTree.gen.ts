@@ -11,6 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as AuditoriaRouteImport } from './routes/auditoria'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as FinanceiroRouteImport } from './routes/financeiro'
+import { Route as LixeiraRouteImport } from './routes/lixeira'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as ReservasRouteImport } from './routes/reservas'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
 import { Route as ClientesClienteIdRouteImport } from './routes/clientes.$clienteId'
@@ -23,6 +29,36 @@ const IndexRoute = IndexRouteImport.update({
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditoriaRoute = AuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceiroRoute = FinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LixeiraRoute = LixeiraRouteImport.update({
+  id: '/lixeira',
+  path: '/lixeira',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReservasRoute = ReservasRouteImport.update({
@@ -44,6 +80,12 @@ const ClientesClienteIdRoute = ClientesClienteIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/auditoria': typeof AuditoriaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/financeiro': typeof FinanceiroRoute
+  '/lixeira': typeof LixeiraRoute
+  '/notificacoes': typeof NotificacoesRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -51,6 +93,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/auditoria': typeof AuditoriaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/financeiro': typeof FinanceiroRoute
+  '/lixeira': typeof LixeiraRoute
+  '/notificacoes': typeof NotificacoesRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes': typeof ClientesIndexRoute
@@ -59,6 +107,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/auditoria': typeof AuditoriaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/financeiro': typeof FinanceiroRoute
+  '/lixeira': typeof LixeiraRoute
+  '/notificacoes': typeof NotificacoesRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -66,13 +120,40 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/agenda' | '/reservas' | '/clientes/$clienteId' | '/clientes/'
+    | '/'
+    | '/agenda'
+    | '/auditoria'
+    | '/configuracoes'
+    | '/financeiro'
+    | '/lixeira'
+    | '/notificacoes'
+    | '/relatorios'
+    | '/reservas'
+    | '/clientes/$clienteId'
+    | '/clientes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/reservas' | '/clientes/$clienteId' | '/clientes'
+  to:
+    | '/'
+    | '/agenda'
+    | '/auditoria'
+    | '/configuracoes'
+    | '/financeiro'
+    | '/lixeira'
+    | '/notificacoes'
+    | '/relatorios'
+    | '/reservas'
+    | '/clientes/$clienteId'
+    | '/clientes'
   id:
     | '__root__'
     | '/'
     | '/agenda'
+    | '/auditoria'
+    | '/configuracoes'
+    | '/financeiro'
+    | '/lixeira'
+    | '/notificacoes'
+    | '/relatorios'
     | '/reservas'
     | '/clientes/$clienteId'
     | '/clientes/'
@@ -81,6 +162,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
+  AuditoriaRoute: typeof AuditoriaRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  FinanceiroRoute: typeof FinanceiroRoute
+  LixeiraRoute: typeof LixeiraRoute
+  NotificacoesRoute: typeof NotificacoesRoute
+  RelatoriosRoute: typeof RelatoriosRoute
   ReservasRoute: typeof ReservasRoute
   ClientesClienteIdRoute: typeof ClientesClienteIdRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
@@ -100,6 +187,48 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auditoria': {
+      id: '/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financeiro': {
+      id: '/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof FinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lixeira': {
+      id: '/lixeira'
+      path: '/lixeira'
+      fullPath: '/lixeira'
+      preLoaderRoute: typeof LixeiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reservas': {
@@ -129,6 +258,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
+  AuditoriaRoute: AuditoriaRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  FinanceiroRoute: FinanceiroRoute,
+  LixeiraRoute: LixeiraRoute,
+  NotificacoesRoute: NotificacoesRoute,
+  RelatoriosRoute: RelatoriosRoute,
   ReservasRoute: ReservasRoute,
   ClientesClienteIdRoute: ClientesClienteIdRoute,
   ClientesIndexRoute: ClientesIndexRoute,
@@ -136,13 +271,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
