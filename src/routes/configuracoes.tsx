@@ -93,7 +93,7 @@ function PaginaConfiguracoes() {
             <CampoTelefone
               id="telefone"
               value={form.telefone ?? ""}
-              onChange={(evento) => atualizar("telefone", evento.target.value)}
+              onChange={(valor) => atualizar("telefone", valor)}
             />
           </div>
           <div className="space-y-2">
@@ -101,7 +101,7 @@ function PaginaConfiguracoes() {
             <CampoTelefone
               id="whatsapp"
               value={form.whatsapp ?? ""}
-              onChange={(evento) => atualizar("whatsapp", evento.target.value)}
+              onChange={(valor) => atualizar("whatsapp", valor)}
             />
           </div>
           <div className="space-y-2">
