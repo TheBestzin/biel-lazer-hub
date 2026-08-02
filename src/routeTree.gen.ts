@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as ReservasRouteImport } from './routes/reservas'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
 import { Route as ClientesClienteIdRouteImport } from './routes/clientes.$clienteId'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceiroRoute = FinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReservasRoute = ReservasRouteImport.update({
@@ -44,6 +50,7 @@ const ClientesClienteIdRoute = ClientesClienteIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes': typeof ClientesIndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -66,13 +75,25 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/agenda' | '/reservas' | '/clientes/$clienteId' | '/clientes/'
+    | '/'
+    | '/agenda'
+    | '/financeiro'
+    | '/reservas'
+    | '/clientes/$clienteId'
+    | '/clientes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/reservas' | '/clientes/$clienteId' | '/clientes'
+  to:
+    | '/'
+    | '/agenda'
+    | '/financeiro'
+    | '/reservas'
+    | '/clientes/$clienteId'
+    | '/clientes'
   id:
     | '__root__'
     | '/'
     | '/agenda'
+    | '/financeiro'
     | '/reservas'
     | '/clientes/$clienteId'
     | '/clientes/'
@@ -81,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
+  FinanceiroRoute: typeof FinanceiroRoute
   ReservasRoute: typeof ReservasRoute
   ClientesClienteIdRoute: typeof ClientesClienteIdRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
@@ -100,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financeiro': {
+      id: '/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof FinanceiroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reservas': {
@@ -129,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
+  FinanceiroRoute: FinanceiroRoute,
   ReservasRoute: ReservasRoute,
   ClientesClienteIdRoute: ClientesClienteIdRoute,
   ClientesIndexRoute: ClientesIndexRoute,
