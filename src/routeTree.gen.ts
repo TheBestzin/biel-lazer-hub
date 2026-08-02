@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as ReservasRouteImport } from './routes/reservas'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
@@ -30,6 +31,11 @@ const AgendaRoute = AgendaRouteImport.update({
 const FinanceiroRoute = FinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosRoute = RelatoriosRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/financeiro': typeof FinanceiroRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/financeiro': typeof FinanceiroRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/financeiro': typeof FinanceiroRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/financeiro'
+    | '/notificacoes'
     | '/relatorios'
     | '/reservas'
     | '/clientes/$clienteId'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/financeiro'
+    | '/notificacoes'
     | '/relatorios'
     | '/reservas'
     | '/clientes/$clienteId'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/financeiro'
+    | '/notificacoes'
     | '/relatorios'
     | '/reservas'
     | '/clientes/$clienteId'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   FinanceiroRoute: typeof FinanceiroRoute
+  NotificacoesRoute: typeof NotificacoesRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReservasRoute: typeof ReservasRoute
   ClientesClienteIdRoute: typeof ClientesClienteIdRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro'
       fullPath: '/financeiro'
       preLoaderRoute: typeof FinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/relatorios': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   FinanceiroRoute: FinanceiroRoute,
+  NotificacoesRoute: NotificacoesRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReservasRoute: ReservasRoute,
   ClientesClienteIdRoute: ClientesClienteIdRoute,
