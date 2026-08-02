@@ -8,15 +8,33 @@ import {
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
-const config = {
-  apiKey: import.meta.env["VITE_FIREBASE_API_KEY"] as string | undefined,
-  authDomain: import.meta.env["VITE_FIREBASE_AUTH_DOMAIN"] as string | undefined,
-  projectId: import.meta.env["VITE_FIREBASE_PROJECT_ID"] as string | undefined,
-  storageBucket: import.meta.env["VITE_FIREBASE_STORAGE_BUCKET"] as string | undefined,
-  messagingSenderId: import.meta.env["VITE_FIREBASE_MESSAGING_SENDER_ID"] as string | undefined,
-  appId: import.meta.env["VITE_FIREBASE_APP_ID"] as string | undefined,
-  measurementId: import.meta.env["VITE_FIREBASE_MEASUREMENT_ID"] as string | undefined,
+// Chaves públicas do Firebase (publishable — seguras no código do cliente).
+const padrao = {
+  apiKey: "AIzaSyCBbmuO-CYvtbRAsZce8HWXLEOvjzo9Vao",
+  authDomain: "area-de-lazer-biel.firebaseapp.com",
+  projectId: "area-de-lazer-biel",
+  storageBucket: "area-de-lazer-biel.firebasestorage.app",
+  messagingSenderId: "169283488498",
+  appId: "1:169283488498:web:d0891ee1d58a25ebf75e6b",
+  measurementId: "G-3K5TVQCCLM",
 };
+
+const config = {
+  apiKey: (import.meta.env["VITE_FIREBASE_API_KEY"] as string | undefined) ?? padrao.apiKey,
+  authDomain:
+    (import.meta.env["VITE_FIREBASE_AUTH_DOMAIN"] as string | undefined) ?? padrao.authDomain,
+  projectId:
+    (import.meta.env["VITE_FIREBASE_PROJECT_ID"] as string | undefined) ?? padrao.projectId,
+  storageBucket:
+    (import.meta.env["VITE_FIREBASE_STORAGE_BUCKET"] as string | undefined) ?? padrao.storageBucket,
+  messagingSenderId:
+    (import.meta.env["VITE_FIREBASE_MESSAGING_SENDER_ID"] as string | undefined) ??
+    padrao.messagingSenderId,
+  appId: (import.meta.env["VITE_FIREBASE_APP_ID"] as string | undefined) ?? padrao.appId,
+  measurementId:
+    (import.meta.env["VITE_FIREBASE_MEASUREMENT_ID"] as string | undefined) ?? padrao.measurementId,
+};
+
 
 export const firebaseConfigurado = Boolean(config.apiKey && config.projectId && config.appId);
 
