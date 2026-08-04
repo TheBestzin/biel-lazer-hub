@@ -59,7 +59,7 @@ export function ClienteFormDialog({ aberto, aoFechar, cliente }: ClienteFormDial
       cliente
         ? {
             nome: cliente.nome,
-            cpf: cliente.cpf,
+            cpf: cliente.cpf ?? "",
             telefone: cliente.telefone,
             status: cliente.status,
             observacoes: cliente.observacoes ?? "",
