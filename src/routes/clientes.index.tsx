@@ -61,7 +61,7 @@ function PaginaClientes() {
         (cliente) =>
           !termo ||
           cliente.nome.toLowerCase().includes(termo) ||
-          cliente.cpf.includes(termo.replace(/\D/g, "")) ||
+          (cliente.cpf ?? "").includes(termo.replace(/\D/g, "")) ||
           cliente.telefone.includes(termo.replace(/\D/g, "")),
       )
       .sort((a, b) => Number(b.favorito) - Number(a.favorito));
@@ -164,7 +164,7 @@ function PaginaClientes() {
                     className="min-w-0 flex-1"
                   >
                     <p className="truncate font-medium hover:text-primary">{cliente.nome}</p>
-                    <p className="text-xs text-muted-foreground">{mascararCPF(cliente.cpf)}</p>
+                    <p className="text-xs text-muted-foreground">{cliente.cpf ? mascararCPF(cliente.cpf) : mascararTelefone(cliente.telefone)}</p>
                   </Link>
                   <Button
                     variant="ghost"

@@ -67,7 +67,9 @@ function FichaCliente() {
 
       <PageHeader
         titulo={cliente.nome}
-        descricao={`${mascararCPF(cliente.cpf)} · ${mascararTelefone(cliente.telefone)}`}
+        descricao={[cliente.cpf ? mascararCPF(cliente.cpf) : null, mascararTelefone(cliente.telefone)]
+          .filter(Boolean)
+          .join(" · ")}
         acoes={
           <>
             <Button variant="outline" asChild>

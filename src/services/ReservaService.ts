@@ -90,7 +90,7 @@ export const ReservaService = {
         ...dados,
         clienteNome: cliente.nome,
         clienteTelefone: apenasDigitos(cliente.telefone),
-        clienteCPF: cliente.cpf,
+        clienteCPF: cliente.cpf ?? "",
         observacoes: dados.observacoes ?? "",
         statusReserva: "reservada" satisfies StatusReserva,
         checklist: checklistInicial(),
