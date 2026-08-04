@@ -59,7 +59,7 @@ export function ClienteFormDialog({ aberto, aoFechar, cliente }: ClienteFormDial
       cliente
         ? {
             nome: cliente.nome,
-            cpf: cliente.cpf,
+            cpf: cliente.cpf ?? "",
             telefone: cliente.telefone,
             status: cliente.status,
             observacoes: cliente.observacoes ?? "",
@@ -109,7 +109,7 @@ export function ClienteFormDialog({ aberto, aoFechar, cliente }: ClienteFormDial
     evento.preventDefault();
     const novosErros: Record<string, string> = {};
     if (dados.nome.trim().length < 3) novosErros["nome"] = "Informe o nome completo.";
-    if (!validarCPF(dados.cpf)) novosErros["cpf"] = "CPF inválido.";
+    if (dados.cpf.trim() && !validarCPF(dados.cpf)) novosErros["cpf"] = "CPF inválido.";
     if (!validarTelefone(dados.telefone)) novosErros["telefone"] = "Telefone inválido.";
     setErros(novosErros);
     if (Object.keys(novosErros).length) return;
@@ -147,7 +147,7 @@ export function ClienteFormDialog({ aberto, aoFechar, cliente }: ClienteFormDial
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cliente-cpf">CPF</Label>
+              <Label htmlFor="cliente-cpf">CPF (opcional)</Label>
               <CampoCPF
                 id="cliente-cpf"
                 value={dados.cpf}

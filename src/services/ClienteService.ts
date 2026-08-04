@@ -29,14 +29,22 @@ export const ClienteService = {
   },
 
   async cpfDisponivel(cpf: string, ignorarId?: string): Promise<boolean> {
+    if (!apenasDigitos(cpf)) return true;
     const encontrados = await listar<Cliente>(COLECOES.clientes, [
       where("cpf", "==", apenasDigitos(cpf)),
     ]);
     return encontrados.every((item) => item.id === ignorarId);
   },
 
+  async porTelefone(telefone: string): Promise<Cliente | null> {
+    const encontrados = await listar<Cliente>(COLECOES.clientes, [
+      where("telefone", "==", apenasDigitos(telefone)),
+    ]);
+    return encontrados.find((item) => !item.deleted) ?? null;
+  },
+
   async criar(dados: DadosCliente, autor: string): Promise<string> {
-    const cpf = apenasDigitos(dados.cpf);
+    const cpf = apenasDigitos(dados.cpf ?? "");
     if (!(await ClienteService.cpfDisponivel(cpf))) {
       throw new Error("Já existe um cliente cadastrado com este CPF.");
     }

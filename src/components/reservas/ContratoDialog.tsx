@@ -33,7 +33,7 @@ export function ContratoDialog({ aberto, aoFechar, reserva }: ContratoDialogProp
     const substituicoes: Record<string, string> = {
       empresa: configuracoes?.nomeEmpresa ?? "Área de Lazer Biel",
       cliente: reserva.clienteNome,
-      cpf: mascararCPF(reserva.clienteCPF),
+      cpf: mascararCPF(reserva.clienteCPF ?? ""),
       telefone: mascararTelefone(reserva.clienteTelefone),
       data: formatarData(reserva.data),
       entrada: reserva.entrada,

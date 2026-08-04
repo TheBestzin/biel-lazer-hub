@@ -17,6 +17,7 @@ import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as LixeiraRouteImport } from './routes/lixeira'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as ReservarRouteImport } from './routes/reservar'
 import { Route as ReservasRouteImport } from './routes/reservas'
 import { Route as ClientesIndexRouteImport } from './routes/clientes.index'
 import { Route as ClientesClienteIdRouteImport } from './routes/clientes.$clienteId'
@@ -61,6 +62,11 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservarRoute = ReservarRouteImport.update({
+  id: '/reservar',
+  path: '/reservar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReservasRoute = ReservasRouteImport.update({
   id: '/reservas',
   path: '/reservas',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reservar': typeof ReservarRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reservar': typeof ReservarRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes': typeof ClientesIndexRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reservar': typeof ReservarRoute
   '/reservas': typeof ReservasRoute
   '/clientes/$clienteId': typeof ClientesClienteIdRoute
   '/clientes/': typeof ClientesIndexRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
+    | '/reservar'
     | '/reservas'
     | '/clientes/$clienteId'
     | '/clientes/'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
+    | '/reservar'
     | '/reservas'
     | '/clientes/$clienteId'
     | '/clientes'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
+    | '/reservar'
     | '/reservas'
     | '/clientes/$clienteId'
     | '/clientes/'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   LixeiraRoute: typeof LixeiraRoute
   NotificacoesRoute: typeof NotificacoesRoute
   RelatoriosRoute: typeof RelatoriosRoute
+  ReservarRoute: typeof ReservarRoute
   ReservasRoute: typeof ReservasRoute
   ClientesClienteIdRoute: typeof ClientesClienteIdRoute
   ClientesIndexRoute: typeof ClientesIndexRoute
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservar': {
+      id: '/reservar'
+      path: '/reservar'
+      fullPath: '/reservar'
+      preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reservas': {
       id: '/reservas'
       path: '/reservas'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   LixeiraRoute: LixeiraRoute,
   NotificacoesRoute: NotificacoesRoute,
   RelatoriosRoute: RelatoriosRoute,
+  ReservarRoute: ReservarRoute,
   ReservasRoute: ReservasRoute,
   ClientesClienteIdRoute: ClientesClienteIdRoute,
   ClientesIndexRoute: ClientesIndexRoute,

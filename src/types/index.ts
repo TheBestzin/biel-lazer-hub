@@ -37,7 +37,7 @@ export interface Admin extends Auditavel {
 export interface Cliente extends Auditavel {
   id: string;
   nome: string;
-  cpf: string;
+  cpf?: string;
   telefone: string;
   status: StatusCliente;
   observacoes?: string;
@@ -59,7 +59,7 @@ export interface Reserva extends Auditavel {
   clienteId: string;
   clienteNome: string;
   clienteTelefone: string;
-  clienteCPF: string;
+  clienteCPF?: string;
   /** ISO yyyy-MM-dd */
   data: string;
   entrada: string;

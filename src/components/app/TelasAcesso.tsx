@@ -133,6 +133,12 @@ export function TelaLogin() {
         <Button type="button" variant="ghost" className="w-full" onClick={() => void esqueciSenha()}>
           Esqueci minha senha
         </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          É cliente?{" "}
+          <a href="/reservar" className="font-medium text-primary hover:underline">
+            Consulte datas e reserve online
+          </a>
+        </p>
       </form>
     </Moldura>
   );
