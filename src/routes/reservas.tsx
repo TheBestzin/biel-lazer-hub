@@ -17,6 +17,7 @@ import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
 import { ChecklistDialog } from "@/components/reservas/ChecklistDialog";
 import { ContratoDialog } from "@/components/reservas/ContratoDialog";
+import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
