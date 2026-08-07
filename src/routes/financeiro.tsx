@@ -29,11 +29,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CATEGORIAS_DESPESA } from "@/constants";
-import { chaves, useAcao, useDespesas, useMovimentos } from "@/hooks/useDados";
+import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
+import { chaves, useAcao, useDespesas, useMovimentos, useReservas } from "@/hooks/useDados";
 import { DespesaService } from "@/services/DespesaService";
 import { LogService } from "@/services/LogService";
 import type { CategoriaDespesa, Despesa } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
+
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({
