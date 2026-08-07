@@ -208,6 +208,10 @@ function PaginaFinanceiro() {
         />
       </div>
 
+      <LembretesPagamento />
+
+
+
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
