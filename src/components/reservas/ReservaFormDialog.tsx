@@ -270,10 +270,21 @@ export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: Re
               <Label htmlFor="reserva-status">Status do pagamento</Label>
               <Select
                 value={dados.statusPagamento}
-                onValueChange={(valor) =>
-                  setDados({ ...dados, statusPagamento: valor as StatusPagamento })
-                }
+                onValueChange={(valor) => {
+                  const status = valor as StatusPagamento;
+                  setDados({
+                    ...dados,
+                    statusPagamento: status,
+                    valorPago:
+                      status === "pago"
+                        ? dados.valor
+                        : status === "pendente"
+                          ? 0
+                          : dados.valorPago,
+                  });
+                }}
               >
+
                 <SelectTrigger id="reserva-status">
                   <SelectValue />
                 </SelectTrigger>

@@ -186,14 +186,20 @@ function PaginaReservarPublica() {
       <header className="border-b bg-card/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <AppLogo />
-          {whatsapp && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={`https://wa.me/55${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-                Falar no WhatsApp
-              </a>
+          <div className="flex items-center gap-2">
+            {whatsapp && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={`https://wa.me/55${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                  Falar no WhatsApp
+                </a>
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/?login=1">Área do admin</a>
             </Button>
-          )}
+          </div>
         </div>
+
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
