@@ -17,6 +17,7 @@ import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
 import { ChecklistDialog } from "@/components/reservas/ChecklistDialog";
 import { ContratoDialog } from "@/components/reservas/ContratoDialog";
+import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -140,6 +141,10 @@ function PaginaReservas() {
           </Button>
         }
       />
+
+      <LembretesPagamento />
+
+
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <Tabs value={aba} onValueChange={setAba} className="lg:w-auto">

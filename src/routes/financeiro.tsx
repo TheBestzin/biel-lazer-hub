@@ -29,11 +29,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CATEGORIAS_DESPESA } from "@/constants";
-import { chaves, useAcao, useDespesas, useMovimentos } from "@/hooks/useDados";
+import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
+import { chaves, useAcao, useDespesas, useMovimentos, useReservas } from "@/hooks/useDados";
 import { DespesaService } from "@/services/DespesaService";
 import { LogService } from "@/services/LogService";
 import type { CategoriaDespesa, Despesa } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
+
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({
@@ -55,6 +57,7 @@ const hojeISO = () => new Date().toISOString().slice(0, 10);
 function PaginaFinanceiro() {
   const { admin } = useAuth();
   const { data: movimentos, isLoading } = useMovimentos();
+  const { data: reservas } = useReservas();
   const { data: despesas } = useDespesas();
   const [aba, setAba] = useState("receitas");
   const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
@@ -66,18 +69,42 @@ function PaginaFinanceiro() {
   const [valor, setValor] = useState(0);
   const [data, setData] = useState(hojeISO);
 
+  /** Receitas derivadas das reservas (fonte da verdade) + lançamentos manuais sem reserva. */
+  const receitas = useMemo(() => {
+    const deReservas = reservas
+      .filter((r) => !r.deleted && r.statusReserva !== "cancelada" && (r.valorPago || 0) > 0)
+      .map((r) => ({
+        id: `reserva-${r.id}`,
+        descricao: `Pagamento — ${r.clienteNome}`,
+        categoria: "Locação",
+        data: r.data,
+        valor: r.valorPago,
+      }));
+    const manuais = movimentos
+      .filter((m) => m.tipo === "receita" && !m.reservaId)
+      .map((m) => ({
+        id: m.id,
+        descricao: m.descricao,
+        categoria: m.categoria,
+        data: m.data,
+        valor: m.valor,
+      }));
+    return [...deReservas, ...manuais].sort((a, b) => b.data.localeCompare(a.data));
+  }, [reservas, movimentos]);
+
   const meses = useMemo(() => {
     const chavesMes = new Set<string>([new Date().toISOString().slice(0, 7)]);
-    movimentos.forEach((m) => chavesMes.add(m.data.slice(0, 7)));
+    receitas.forEach((m) => chavesMes.add(m.data.slice(0, 7)));
     despesas.forEach((d) => chavesMes.add(d.data.slice(0, 7)));
     return Array.from(chavesMes).sort((a, b) => b.localeCompare(a));
-  }, [movimentos, despesas]);
+  }, [receitas, despesas]);
 
   const receitasMes = useMemo(
-    () => movimentos.filter((m) => m.tipo === "receita" && m.data.startsWith(mes)),
-    [movimentos, mes],
+    () => receitas.filter((m) => m.data.startsWith(mes)),
+    [receitas, mes],
   );
   const despesasMes = useMemo(() => despesas.filter((d) => d.data.startsWith(mes)), [despesas, mes]);
+
 
   const totalReceitas = receitasMes.reduce((total, m) => total + m.valor, 0);
   const totalDespesas = despesasMes.reduce((total, d) => total + d.valor, 0);
@@ -180,6 +207,10 @@ function PaginaFinanceiro() {
           indice={2}
         />
       </div>
+
+      <LembretesPagamento />
+
+
 
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
