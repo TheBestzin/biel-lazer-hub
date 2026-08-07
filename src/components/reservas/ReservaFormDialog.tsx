@@ -283,7 +283,8 @@ export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: Re
                           : dados.valorPago,
                   });
                 }}
-              
+              >
+
                 <SelectTrigger id="reserva-status">
                   <SelectValue />
                 </SelectTrigger>
