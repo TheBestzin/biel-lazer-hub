@@ -141,6 +141,10 @@ function PaginaReservas() {
         }
       />
 
+      <LembretesPagamento />
+
+
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <Tabs value={aba} onValueChange={setAba} className="lg:w-auto">
           <TabsList>
