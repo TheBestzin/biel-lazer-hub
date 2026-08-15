@@ -28,18 +28,32 @@ function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
             to={item.para}
             onClick={aoNavegar}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
               ativo
-                ? "bg-primary-soft text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "bg-primary-soft text-primary shadow-soft"
+                : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",
             )}
           >
-            <item.icone className="size-4.5 shrink-0" aria-hidden />
-            <span>{item.label}</span>
+            <span
+              className={cn(
+                "absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full brand-gradient transition-opacity",
+                ativo ? "opacity-100" : "opacity-0",
+              )}
+              aria-hidden
+            />
+            <item.icone
+              className={cn(
+                "size-4.5 shrink-0 transition-transform duration-200",
+                !ativo && "group-hover:scale-110",
+              )}
+              aria-hidden
+            />
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}
     </nav>
+
   );
 }
 
