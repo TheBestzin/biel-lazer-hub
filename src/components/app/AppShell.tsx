@@ -28,18 +28,32 @@ function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
             to={item.para}
             onClick={aoNavegar}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
               ativo
-                ? "bg-primary-soft text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "bg-primary-soft text-primary shadow-soft"
+                : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",
             )}
           >
-            <item.icone className="size-4.5 shrink-0" aria-hidden />
-            <span>{item.label}</span>
+            <span
+              className={cn(
+                "absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full brand-gradient transition-opacity",
+                ativo ? "opacity-100" : "opacity-0",
+              )}
+              aria-hidden
+            />
+            <item.icone
+              className={cn(
+                "size-4.5 shrink-0 transition-transform duration-200",
+                !ativo && "group-hover:scale-110",
+              )}
+              aria-hidden
+            />
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}
     </nav>
+
   );
 }
 
@@ -78,14 +92,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { tema, definirTema, escuroAtivo } = useTema();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card p-4 lg:flex">
+    <div className="relative flex min-h-screen bg-background">
+      <div
+        className="pointer-events-none fixed inset-0 mesh-gradient opacity-60 dark:opacity-40"
+        aria-hidden
+      />
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r bg-sidebar/85 p-4 backdrop-blur-xl lg:flex">
         <AppLogoCompleta />
         <ScrollArea className="-mx-1 mt-6 flex-1 px-1">
           <Navegacao />
         </ScrollArea>
         <PerfilRodape />
       </aside>
+
 
       <AnimatePresence>
         {menuAberto && (
@@ -124,8 +143,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur sm:px-6">
+      <div className="relative flex min-w-0 flex-1 flex-col lg:pl-64">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/70 px-4 backdrop-blur-xl sm:px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -142,6 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
+              className="rounded-xl"
               aria-label={escuroAtivo ? "Ativar tema claro" : "Ativar tema escuro"}
               onClick={() => definirTema(tema === "dark" ? "light" : "dark")}
             >
@@ -149,8 +169,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 sm:px-6 lg:py-8">
+          {children}
+        </main>
       </div>
+
     </div>
   );
 }

@@ -182,39 +182,70 @@ function PaginaReservarPublica() {
   const whatsapp = configuracoes?.whatsapp ?? configuracoes?.telefone ?? "";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/60">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+    <div className="relative min-h-screen bg-background">
+      <div className="pointer-events-none fixed inset-0 mesh-gradient" aria-hidden />
+
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
           <AppLogo />
           <div className="flex items-center gap-2">
             {whatsapp && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={`https://wa.me/55${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-                  Falar no WhatsApp
+              <Button variant="outline" size="sm" className="rounded-full" asChild>
+                <a
+                  href={`https://wa.me/55${whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="size-4" aria-hidden />
+                  WhatsApp
                 </a>
               </Button>
             )}
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="rounded-full" asChild>
               <a href="/?login=1">Área do admin</a>
             </Button>
           </div>
         </div>
-
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
-        <section className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold sm:text-3xl">Reserve sua data</h1>
-          <p className="text-sm text-muted-foreground">
-            Veja no calendário se o dia que você quer está livre e faça sua reserva na hora.
-            {configuracoes?.valorPadrao
-              ? ` Diária a partir de ${formatarMoeda(configuracoes.valorPadrao)}.`
-              : ""}
+      <main className="relative mx-auto max-w-4xl space-y-8 px-4 py-10">
+        <section className="space-y-5 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary-soft px-3.5 py-1.5 text-xs font-semibold text-primary">
+            <Sparkles className="size-3.5" aria-hidden />
+            Reserva online em menos de 1 minuto
+          </span>
+          <h1 className="font-display text-4xl leading-[1.05] font-extrabold text-balance sm:text-5xl">
+            O seu dia perfeito na{" "}
+            <span className="text-brand-gradient">Área de Lazer Biel</span>
+          </h1>
+          <p className="mx-auto max-w-xl text-base text-pretty text-muted-foreground">
+            Escolha a data no calendário, confirme seus dados e pronto. Sem burocracia, sem
+            cadastro.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm">
+            {[
+              { icone: Sun, texto: `Das ${configuracoes?.entradaPadrao ?? "08:00"} às ${configuracoes?.saidaPadrao ?? "22:00"}` },
+              { icone: Waves, texto: "Piscina e área gourmet" },
+              {
+                icone: CalendarCheck,
+                texto: configuracoes?.valorPadrao
+                  ? `Diária ${formatarMoeda(configuracoes.valorPadrao)}`
+                  : "Diária sob consulta",
+              },
+            ].map((item) => (
+              <span
+                key={item.texto}
+                className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 font-medium backdrop-blur"
+              >
+                <item.icone className="size-4 text-primary" aria-hidden />
+                {item.texto}
+              </span>
+            ))}
+          </div>
         </section>
 
         {concluido && (
-          <Alert>
+          <Alert className="border-success/30 bg-success/10">
             <AlertDescription className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
               <span>
@@ -225,15 +256,16 @@ function PaginaReservarPublica() {
           </Alert>
         )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base capitalize">
+        <Card className="overflow-hidden rounded-3xl border-border/70 shadow-elegant backdrop-blur">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-card/60">
+            <CardTitle className="font-display text-lg capitalize">
               {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
             </CardTitle>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <Button
                 variant="outline"
                 size="icon"
+                className="rounded-full"
                 aria-label="Mês anterior"
                 onClick={() => setMes(addMonths(mes, -1))}
               >
@@ -242,6 +274,7 @@ function PaginaReservarPublica() {
               <Button
                 variant="outline"
                 size="icon"
+                className="rounded-full"
                 aria-label="Próximo mês"
                 onClick={() => setMes(addMonths(mes, 1))}
               >
@@ -249,13 +282,13 @@ function PaginaReservarPublica() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+          <CardContent className="space-y-4 pt-5">
+            <div className="grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
               {DIAS.map((dia) => (
                 <span key={dia}>{dia}</span>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
               {dias.map((dia) => {
                 const chave = chaveDia(dia);
                 const foraDoMes = !isSameMonth(dia, mes);
@@ -275,38 +308,48 @@ function PaginaReservarPublica() {
                     }}
                     aria-label={`${formatarData(chave)} — ${indisponivel ? "indisponível" : "disponível"}`}
                     className={cn(
-                      "flex aspect-square flex-col items-center justify-center rounded-lg border text-sm transition",
-                      foraDoMes && "opacity-40",
+                      "relative flex aspect-square flex-col items-center justify-center rounded-2xl border text-sm font-semibold transition-all duration-200",
+                      foraDoMes && "opacity-35",
                       desabilitado
-                        ? "cursor-not-allowed border-transparent bg-muted text-muted-foreground line-through"
-                        : "border-success/40 bg-success/10 text-foreground hover:border-success",
-                      selecionado && "border-primary bg-primary text-primary-foreground",
+                        ? "cursor-not-allowed border-transparent bg-muted/70 text-muted-foreground"
+                        : "border-success/35 bg-success/10 text-foreground hover:-translate-y-0.5 hover:border-success hover:shadow-soft",
+                      selecionado &&
+                        "border-transparent brand-gradient text-primary-foreground shadow-glow hover:-translate-y-0.5",
                     )}
                   >
-                    {format(dia, "d")}
+                    <span className="tabular-nums">{format(dia, "d")}</span>
+                    {!desabilitado && !selecionado && (
+                      <span className="mt-1 size-1.5 rounded-full bg-success" aria-hidden />
+                    )}
+                    {desabilitado && !passado && (
+                      <span className="mt-1 h-0.5 w-4 rounded-full bg-muted-foreground/50" aria-hidden />
+                    )}
                   </button>
                 );
               })}
             </div>
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="size-3 rounded border border-success/40 bg-success/10" /> Disponível
+            <div className="flex flex-wrap gap-4 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-md border border-success/40 bg-success/15" /> Livre
               </span>
-              <span className="flex items-center gap-1">
-                <span className="size-3 rounded bg-muted" /> Indisponível
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-md bg-muted" /> Ocupado
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-md brand-gradient" /> Sua escolha
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarCheck className="size-4" aria-hidden />
+        <Card className="overflow-hidden rounded-3xl border-border/70 shadow-elegant backdrop-blur">
+          <CardHeader className="border-b border-border/60 bg-card/60">
+            <CardTitle className="font-display flex items-center gap-2 text-lg">
+              <CalendarCheck className="size-4.5 text-primary" aria-hidden />
               Seus dados
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-5">
             <form
               className="space-y-4"
               onSubmit={(evento) => {
@@ -314,11 +357,18 @@ function PaginaReservarPublica() {
                 enviar.mutate();
               }}
             >
-              <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+              <div
+                className={cn(
+                  "rounded-2xl border p-4 text-sm transition-colors",
+                  dataEscolhida
+                    ? "border-primary/30 bg-primary-soft"
+                    : "border-dashed bg-muted/40",
+                )}
+              >
                 {dataEscolhida ? (
                   <>
-                    <p className="font-medium">{formatarData(dataEscolhida)}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-display font-bold">{formatarData(dataEscolhida)}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Das {configuracoes?.entradaPadrao ?? "08:00"} às{" "}
                       {configuracoes?.saidaPadrao ?? "22:00"}
                       {configuracoes?.valorPadrao
@@ -330,28 +380,33 @@ function PaginaReservarPublica() {
                   <p className="text-muted-foreground">Escolha uma data disponível acima.</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="publico-nome">Nome completo</Label>
-                <Input
-                  id="publico-nome"
-                  value={nome}
-                  onChange={(evento) => setNome(evento.target.value)}
-                  placeholder="Seu nome"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="publico-telefone">Telefone / WhatsApp</Label>
-                <CampoTelefone
-                  id="publico-telefone"
-                  value={telefone}
-                  onChange={(valor) => setTelefone(valor)}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="publico-nome">Nome completo</Label>
+                  <Input
+                    id="publico-nome"
+                    className="h-11 rounded-xl"
+                    value={nome}
+                    onChange={(evento) => setNome(evento.target.value)}
+                    placeholder="Seu nome"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="publico-telefone">Telefone / WhatsApp</Label>
+                  <CampoTelefone
+                    id="publico-telefone"
+                    className="h-11 rounded-xl"
+                    value={telefone}
+                    onChange={(valor) => setTelefone(valor)}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="publico-obs">Observações (opcional)</Label>
                 <Textarea
                   id="publico-obs"
                   rows={3}
+                  className="rounded-xl"
                   value={observacoes}
                   onChange={(evento) => setObservacoes(evento.target.value)}
                   placeholder="Quantidade de convidados, tipo de evento, etc."
@@ -362,7 +417,12 @@ function PaginaReservarPublica() {
                   <AlertDescription>{erro}</AlertDescription>
                 </Alert>
               )}
-              <Button type="submit" className="w-full" disabled={enviar.isPending || !dataEscolhida}>
+              <Button
+                type="submit"
+                size="lg"
+                className="h-12 w-full rounded-xl text-base font-semibold shadow-glow"
+                disabled={enviar.isPending || !dataEscolhida}
+              >
                 {enviar.isPending ? "Reservando..." : "Confirmar reserva"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
@@ -372,7 +432,12 @@ function PaginaReservarPublica() {
             </form>
           </CardContent>
         </Card>
+
+        <footer className="pb-6 text-center text-xs text-muted-foreground">
+          Área de Lazer Biel · Reservas online
+        </footer>
       </main>
     </div>
   );
 }
+
