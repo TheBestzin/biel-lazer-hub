@@ -202,7 +202,11 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 226);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.735 0.135 232);
+
+  --glass-bg: color-mix(in oklab, var(--card) 62%, transparent);
+  --glass-border: oklch(1 0 0 / 10%);
 }
+
 
 @layer base {
   * {
