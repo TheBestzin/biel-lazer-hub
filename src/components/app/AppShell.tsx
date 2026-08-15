@@ -92,14 +92,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { tema, definirTema, escuroAtivo } = useTema();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r bg-card p-4 lg:flex">
+    <div className="relative flex min-h-screen bg-background">
+      <div
+        className="pointer-events-none fixed inset-0 mesh-gradient opacity-60 dark:opacity-40"
+        aria-hidden
+      />
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r bg-sidebar/85 p-4 backdrop-blur-xl lg:flex">
         <AppLogoCompleta />
         <ScrollArea className="-mx-1 mt-6 flex-1 px-1">
           <Navegacao />
         </ScrollArea>
         <PerfilRodape />
       </aside>
+
 
       <AnimatePresence>
         {menuAberto && (
