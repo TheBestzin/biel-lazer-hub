@@ -14,7 +14,17 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarCheck,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle,
+  Sparkles,
+  Sun,
+  Waves,
+} from "lucide-react";
+
 
 import { AppLogo } from "@/components/app/AppLogo";
 import { CampoTelefone } from "@/components/app/CamposMascarados";
