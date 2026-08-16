@@ -14,7 +14,17 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarCheck,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle,
+  Sparkles,
+  Sun,
+  Waves,
+} from "lucide-react";
+
 
 import { AppLogo } from "@/components/app/AppLogo";
 import { CampoTelefone } from "@/components/app/CamposMascarados";
@@ -258,7 +268,7 @@ function PaginaReservarPublica() {
 
         <Card className="overflow-hidden rounded-3xl border-border/70 shadow-elegant backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-card/60">
-            <CardTitle className="font-display text-lg capitalize">
+            <CardTitle className="font-display text-lg lowercase first-letter:uppercase">
               {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
             </CardTitle>
             <div className="flex gap-1.5">
