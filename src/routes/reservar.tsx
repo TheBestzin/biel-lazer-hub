@@ -14,22 +14,23 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 import {
   CalendarCheck,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   MessageCircle,
   Sparkles,
-  Sun,
   Waves,
+  Wallet,
 } from "lucide-react";
 
-
+import heroPiscina from "@/assets/hero-piscina.jpg";
 import { AppLogo } from "@/components/app/AppLogo";
 import { CampoTelefone } from "@/components/app/CamposMascarados";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,13 +191,25 @@ function PaginaReservarPublica() {
   });
 
   const whatsapp = configuracoes?.whatsapp ?? configuracoes?.telefone ?? "";
+  const entrada = configuracoes?.entradaPadrao ?? "08:00";
+  const saida = configuracoes?.saidaPadrao ?? "22:00";
+
+  const destaques = [
+    { icone: Clock, rotulo: "Horário", texto: `Das ${entrada} às ${saida}` },
+    { icone: Waves, rotulo: "Estrutura", texto: "Piscina & área gourmet" },
+    {
+      icone: Wallet,
+      rotulo: "Investimento",
+      texto: configuracoes?.valorPadrao
+        ? `${formatarMoeda(configuracoes.valorPadrao)} / diária`
+        : "Diária sob consulta",
+    },
+  ];
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="pointer-events-none fixed inset-0 mesh-gradient" aria-hidden />
-
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <AppLogo />
           <div className="flex items-center gap-2">
             {whatsapp && (
@@ -207,7 +220,7 @@ function PaginaReservarPublica() {
                   rel="noreferrer"
                 >
                   <MessageCircle className="size-4" aria-hidden />
-                  WhatsApp
+                  <span className="hidden sm:inline">WhatsApp</span>
                 </a>
               </Button>
             )}
@@ -218,236 +231,284 @@ function PaginaReservarPublica() {
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-4xl space-y-8 px-4 py-10">
-        <section className="space-y-5 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary-soft px-3.5 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5" aria-hidden />
-            Reserva online em menos de 1 minuto
-          </span>
-          <h1 className="font-display text-4xl leading-[1.05] font-extrabold text-balance sm:text-5xl">
-            O seu dia perfeito na{" "}
-            <span className="text-brand-gradient">Área de Lazer Biel</span>
-          </h1>
-          <p className="mx-auto max-w-xl text-base text-pretty text-muted-foreground">
-            Escolha a data no calendário, confirme seus dados e pronto. Sem burocracia, sem
-            cadastro.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm">
-            {[
-              { icone: Sun, texto: `Das ${configuracoes?.entradaPadrao ?? "08:00"} às ${configuracoes?.saidaPadrao ?? "22:00"}` },
-              { icone: Waves, texto: "Piscina e área gourmet" },
-              {
-                icone: CalendarCheck,
-                texto: configuracoes?.valorPadrao
-                  ? `Diária ${formatarMoeda(configuracoes.valorPadrao)}`
-                  : "Diária sob consulta",
-              },
-            ].map((item) => (
-              <span
-                key={item.texto}
-                className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 font-medium backdrop-blur"
-              >
-                <item.icone className="size-4 text-primary" aria-hidden />
-                {item.texto}
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+          className="overflow-hidden rounded-3xl border bg-card shadow-elegant"
+        >
+          {/* Hero */}
+          <div className="relative h-60 overflow-hidden sm:h-80">
+            <img
+              src={heroPiscina}
+              alt="Piscina e área gourmet da Área de Lazer Biel"
+              width={1920}
+              height={1024}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"
+              aria-hidden
+            />
+            <div className="absolute inset-x-0 bottom-0 space-y-2.5 p-6 sm:p-9">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[0.7rem] font-bold tracking-widest text-white uppercase backdrop-blur">
+                <Sparkles className="size-3" aria-hidden />
+                Reserva online em menos de 1 minuto
               </span>
+              <h1 className="font-display max-w-2xl text-3xl leading-tight font-semibold text-white text-balance sm:text-5xl">
+                Área de Lazer Biel
+              </h1>
+              <p className="max-w-lg text-sm text-white/85 sm:text-base">
+                Um refúgio com piscina e área gourmet para os seus melhores momentos. Escolha a
+                data, confirme seus dados e pronto.
+              </p>
+            </div>
+          </div>
+
+          {/* Destaques */}
+          <div className="grid grid-cols-1 gap-px border-b bg-border sm:grid-cols-3">
+            {destaques.map((item) => (
+              <div key={item.rotulo} className="flex items-center gap-4 bg-card p-5 sm:p-6">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-soft">
+                  <item.icone className="size-5 text-primary" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                    {item.rotulo}
+                  </p>
+                  <p className="truncate font-semibold">{item.texto}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </section>
 
-        {concluido && (
-          <Alert className="border-success/30 bg-success/10">
-            <AlertDescription className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-              <span>
-                Reserva confirmada para <strong>{formatarData(concluido)}</strong>. Em breve
-                entraremos em contato pelo WhatsApp para combinar o pagamento.
-              </span>
-            </AlertDescription>
-          </Alert>
-        )}
+          {concluido && (
+            <Alert className="rounded-none border-0 border-b border-success/30 bg-success/10">
+              <AlertDescription className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                <span>
+                  Reserva confirmada para <strong>{formatarData(concluido)}</strong>. Em breve
+                  entraremos em contato pelo WhatsApp para combinar o pagamento.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <Card className="overflow-hidden rounded-3xl border-border/70 shadow-elegant backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/60 bg-card/60">
-            <CardTitle className="font-display text-lg lowercase first-letter:uppercase">
-              {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
-            </CardTitle>
-            <div className="flex gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-                aria-label="Mês anterior"
-                onClick={() => setMes(addMonths(mes, -1))}
-              >
-                <ChevronLeft className="size-4" aria-hidden />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-                aria-label="Próximo mês"
-                onClick={() => setMes(addMonths(mes, 1))}
-              >
-                <ChevronRight className="size-4" aria-hidden />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-5">
-            <div className="grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
-              {DIAS.map((dia) => (
-                <span key={dia}>{dia}</span>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {dias.map((dia) => {
-                const chave = chaveDia(dia);
-                const foraDoMes = !isSameMonth(dia, mes);
-                const passado = isBefore(dia, hoje);
-                const indisponivel = ocupadas.has(chave);
-                const desabilitado = passado || indisponivel;
-                const selecionado = dataEscolhida === chave;
-                return (
-                  <button
-                    key={chave}
-                    type="button"
-                    disabled={desabilitado}
-                    onClick={() => {
-                      setDataEscolhida(chave);
-                      setErro(null);
-                      setConcluido(null);
-                    }}
-                    aria-label={`${formatarData(chave)} — ${indisponivel ? "indisponível" : "disponível"}`}
-                    className={cn(
-                      "relative flex aspect-square flex-col items-center justify-center rounded-2xl border text-sm font-semibold transition-all duration-200",
-                      foraDoMes && "opacity-35",
-                      desabilitado
-                        ? "cursor-not-allowed border-transparent bg-muted/70 text-muted-foreground"
-                        : "border-success/35 bg-success/10 text-foreground hover:-translate-y-0.5 hover:border-success hover:shadow-soft",
-                      selecionado &&
-                        "border-transparent brand-gradient text-primary-foreground shadow-glow hover:-translate-y-0.5",
-                    )}
-                  >
-                    <span className="tabular-nums">{format(dia, "d")}</span>
-                    {!desabilitado && !selecionado && (
-                      <span className="mt-1 size-1.5 rounded-full bg-success" aria-hidden />
-                    )}
-                    {desabilitado && !passado && (
-                      <span className="mt-1 h-0.5 w-4 rounded-full bg-muted-foreground/50" aria-hidden />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap gap-4 border-t border-border/60 pt-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-md border border-success/40 bg-success/15" /> Livre
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-md bg-muted" /> Ocupado
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-md brand-gradient" /> Sua escolha
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden rounded-3xl border-border/70 shadow-elegant backdrop-blur">
-          <CardHeader className="border-b border-border/60 bg-card/60">
-            <CardTitle className="font-display flex items-center gap-2 text-lg">
-              <CalendarCheck className="size-4.5 text-primary" aria-hidden />
-              Seus dados
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-5">
-            <form
-              className="space-y-4"
-              onSubmit={(evento) => {
-                evento.preventDefault();
-                enviar.mutate();
-              }}
+          {/* Calendário + Formulário */}
+          <div className="flex flex-col lg:flex-row">
+            {/* Calendário */}
+            <section
+              className="p-5 sm:p-8 lg:w-3/5 lg:border-r"
+              aria-label="Calendário de disponibilidade"
             >
-              <div
-                className={cn(
-                  "rounded-2xl border p-4 text-sm transition-colors",
-                  dataEscolhida
-                    ? "border-primary/30 bg-primary-soft"
-                    : "border-dashed bg-muted/40",
-                )}
-              >
-                {dataEscolhida ? (
-                  <>
-                    <p className="font-display font-bold">{formatarData(dataEscolhida)}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Das {configuracoes?.entradaPadrao ?? "08:00"} às{" "}
-                      {configuracoes?.saidaPadrao ?? "22:00"}
-                      {configuracoes?.valorPadrao
-                        ? ` · ${formatarMoeda(configuracoes.valorPadrao)}`
-                        : ""}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">Escolha uma data disponível acima.</p>
-                )}
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-xl font-semibold sm:text-2xl">
+                  Selecione a data
+                </h2>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="Mês anterior"
+                    onClick={() => setMes(addMonths(mes, -1))}
+                  >
+                    <ChevronLeft className="size-4" aria-hidden />
+                  </Button>
+                  <span className="min-w-32 text-center text-sm font-semibold lowercase first-letter:uppercase">
+                    {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="Próximo mês"
+                    onClick={() => setMes(addMonths(mes, 1))}
+                  >
+                    <ChevronRight className="size-4" aria-hidden />
+                  </Button>
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+
+              <div className="mb-3 grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-bold tracking-widest text-muted-foreground uppercase">
+                {DIAS.map((dia) => (
+                  <span key={dia}>{dia}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                {dias.map((dia) => {
+                  const chave = chaveDia(dia);
+                  const foraDoMes = !isSameMonth(dia, mes);
+                  const passado = isBefore(dia, hoje);
+                  const indisponivel = ocupadas.has(chave);
+                  const desabilitado = passado || indisponivel;
+                  const selecionado = dataEscolhida === chave;
+                  return (
+                    <button
+                      key={chave}
+                      type="button"
+                      disabled={desabilitado}
+                      onClick={() => {
+                        setDataEscolhida(chave);
+                        setErro(null);
+                        setConcluido(null);
+                      }}
+                      aria-label={`${formatarData(chave)} — ${indisponivel ? "indisponível" : "disponível"}`}
+                      className={cn(
+                        "relative flex aspect-square flex-col items-center justify-center rounded-xl border text-sm font-semibold transition-all duration-200",
+                        foraDoMes && "opacity-35",
+                        desabilitado
+                          ? "cursor-not-allowed border-transparent bg-muted text-muted-foreground"
+                          : "border-success/30 bg-success/10 text-foreground hover:-translate-y-0.5 hover:border-success hover:shadow-soft",
+                        selecionado &&
+                          "border-transparent brand-gradient text-primary-foreground shadow-glow hover:-translate-y-0.5",
+                      )}
+                    >
+                      <span className="tabular-nums">{format(dia, "d")}</span>
+                      {!desabilitado && !selecionado && (
+                        <span className="mt-1 size-1.5 rounded-full bg-success" aria-hidden />
+                      )}
+                      {desabilitado && !passado && (
+                        <span
+                          className="mt-1 h-0.5 w-4 rounded-full bg-muted-foreground/50"
+                          aria-hidden
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t pt-4 text-xs font-medium text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-full border border-success/40 bg-success/15" />{" "}
+                  Disponível
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-full bg-muted" /> Ocupado / bloqueado
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-full brand-gradient" /> Sua escolha
+                </span>
+              </div>
+            </section>
+
+            {/* Formulário */}
+            <section className="bg-muted/40 p-5 sm:p-8 lg:w-2/5" aria-label="Dados da reserva">
+              <h2 className="font-display mb-6 flex items-center gap-2 text-xl font-semibold sm:text-2xl">
+                <CalendarCheck className="size-5 text-primary" aria-hidden />
+                Finalizar reserva
+              </h2>
+              <form
+                className="space-y-5"
+                onSubmit={(evento) => {
+                  evento.preventDefault();
+                  enviar.mutate();
+                }}
+              >
+                <div
+                  className={cn(
+                    "rounded-2xl border p-4 text-sm transition-colors",
+                    dataEscolhida
+                      ? "border-primary/30 bg-primary-soft"
+                      : "border-dashed bg-card/60",
+                  )}
+                >
+                  {dataEscolhida ? (
+                    <>
+                      <p className="font-display font-semibold">{formatarData(dataEscolhida)}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Das {entrada} às {saida}
+                        {configuracoes?.valorPadrao
+                          ? ` · ${formatarMoeda(configuracoes.valorPadrao)}`
+                          : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Escolha uma data disponível no calendário.
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="publico-nome">Nome completo</Label>
+                  <Label
+                    htmlFor="publico-nome"
+                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                  >
+                    Nome completo
+                  </Label>
                   <Input
                     id="publico-nome"
-                    className="h-11 rounded-xl"
+                    className="h-11 rounded-xl bg-card"
                     value={nome}
                     onChange={(evento) => setNome(evento.target.value)}
-                    placeholder="Seu nome"
+                    placeholder="Como devemos te chamar?"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="publico-telefone">Telefone / WhatsApp</Label>
+                  <Label
+                    htmlFor="publico-telefone"
+                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                  >
+                    WhatsApp
+                  </Label>
                   <CampoTelefone
                     id="publico-telefone"
-                    className="h-11 rounded-xl"
+                    className="h-11 rounded-xl bg-card"
                     value={telefone}
                     onChange={(valor) => setTelefone(valor)}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="publico-obs">Observações (opcional)</Label>
-                <Textarea
-                  id="publico-obs"
-                  rows={3}
-                  className="rounded-xl"
-                  value={observacoes}
-                  onChange={(evento) => setObservacoes(evento.target.value)}
-                  placeholder="Quantidade de convidados, tipo de evento, etc."
-                />
-              </div>
-              {erro && (
-                <Alert variant="destructive">
-                  <AlertDescription>{erro}</AlertDescription>
-                </Alert>
-              )}
-              <Button
-                type="submit"
-                size="lg"
-                className="h-12 w-full rounded-xl text-base font-semibold shadow-glow"
-                disabled={enviar.isPending || !dataEscolhida}
-              >
-                {enviar.isPending ? "Reservando..." : "Confirmar reserva"}
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                A reserva fica registrada como pendente de pagamento. Entraremos em contato para
-                confirmar os detalhes.
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="publico-obs"
+                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+                  >
+                    Observações (opcional)
+                  </Label>
+                  <Textarea
+                    id="publico-obs"
+                    rows={3}
+                    className="resize-none rounded-xl bg-card"
+                    value={observacoes}
+                    onChange={(evento) => setObservacoes(evento.target.value)}
+                    placeholder="Quantidade de convidados, tipo de evento, etc."
+                  />
+                </div>
 
-        <footer className="pb-6 text-center text-xs text-muted-foreground">
+                {erro && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{erro}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="h-12 w-full rounded-xl text-base font-bold shadow-glow transition-transform active:scale-[0.98]"
+                  disabled={enviar.isPending || !dataEscolhida}
+                >
+                  {enviar.isPending
+                    ? "Reservando..."
+                    : dataEscolhida
+                      ? `Solicitar reserva para ${formatarData(dataEscolhida)}`
+                      : "Confirmar reserva"}
+                </Button>
+                <p className="px-2 text-center text-xs text-muted-foreground">
+                  A reserva fica registrada como pendente de pagamento. Entraremos em contato pelo
+                  WhatsApp para confirmar os detalhes.
+                </p>
+              </form>
+            </section>
+          </div>
+        </motion.div>
+
+        <footer className="py-8 text-center text-xs text-muted-foreground">
           Área de Lazer Biel · Reservas online
         </footer>
       </main>
     </div>
   );
 }
-
