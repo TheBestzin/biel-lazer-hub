@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -14,15 +14,21 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowRight,
   CalendarCheck,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Loader2,
   MessageCircle,
+  Minus,
+  Plus,
+  ShieldCheck,
   Sparkles,
+  UtensilsCrossed,
   Waves,
   Wallet,
 } from "lucide-react";
@@ -67,14 +73,32 @@ export const Route = createFileRoute("/reservar")({
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+const BENEFICIOS = [
+  { icone: Waves, texto: "Piscina exclusiva" },
+  { icone: UtensilsCrossed, texto: "Área gourmet completa" },
+  { icone: ShieldCheck, texto: "Ambiente privativo" },
+  { icone: MessageCircle, texto: "Reserva rápida pelo WhatsApp" },
+];
+
 function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => startOfMonth(new Date()));
   const [dataEscolhida, setDataEscolhida] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [convidados, setConvidados] = useState(10);
   const [observacoes, setObservacoes] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [concluido, setConcluido] = useState<string | null>(null);
+
+  // Força o visual escuro na página pública, sem alterar preferências salvas.
+  useEffect(() => {
+    const html = document.documentElement;
+    const jaEscuro = html.classList.contains("dark");
+    if (!jaEscuro) html.classList.add("dark");
+    return () => {
+      if (!jaEscuro) html.classList.remove("dark");
+    };
+  }, []);
 
   const { data: reservas = [], refetch: recarregarReservas } = useQuery({
     queryKey: ["publico", "reservas"],
@@ -151,6 +175,10 @@ function PaginaReservarPublica() {
         throw new Error("Não foi possível concluir a reserva. Entre em contato pelo WhatsApp.");
       }
 
+      const anotacoes = [`Convidados: ${convidados}`, observacoes.trim()]
+        .filter(Boolean)
+        .join(" · ");
+
       await ReservaService.criar(
         {
           clienteId: cliente.id,
@@ -160,7 +188,7 @@ function PaginaReservarPublica() {
           valor: configuracoes?.valorPadrao ?? 0,
           valorPago: 0,
           statusPagamento: "pendente",
-          observacoes: observacoes.trim(),
+          observacoes: anotacoes,
         },
         cliente,
         "site",
@@ -181,6 +209,7 @@ function PaginaReservarPublica() {
       setDataEscolhida(null);
       setNome("");
       setTelefone("");
+      setConvidados(10);
       setObservacoes("");
       void recarregarReservas();
       toast.success("Reserva registrada!");
@@ -192,25 +221,25 @@ function PaginaReservarPublica() {
 
   const whatsapp = configuracoes?.whatsapp ?? configuracoes?.telefone ?? "";
   const entrada = configuracoes?.entradaPadrao ?? "08:00";
-  const saida = configuracoes?.saidaPadrao ?? "22:00";
+  const saida = configuracoes?.saidaPadrao ?? "18:00";
 
   const destaques = [
-    { icone: Clock, rotulo: "Horário", texto: `Das ${entrada} às ${saida}` },
-    { icone: Waves, rotulo: "Estrutura", texto: "Piscina & área gourmet" },
+    { icone: Clock, rotulo: "Horário", texto: `${entrada} – ${saida}` },
+    { icone: Waves, rotulo: "Estrutura", texto: "Piscina + Área gourmet" },
     {
       icone: Wallet,
       rotulo: "Investimento",
       texto: configuracoes?.valorPadrao
         ? `${formatarMoeda(configuracoes.valorPadrao)} / diária`
-        : "Diária sob consulta",
+        : "R$ 300,00 / diária",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <AppLogo />
+          <AppLogo tamanho={36} />
           <div className="flex items-center gap-2">
             {whatsapp && (
               <Button variant="outline" size="sm" className="rounded-full" asChild>
@@ -231,281 +260,358 @@ function PaginaReservarPublica() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-          className="overflow-hidden rounded-3xl border bg-card shadow-elegant"
-        >
-          {/* Hero */}
-          <div className="relative h-60 overflow-hidden sm:h-80">
-            <img
-              src={heroPiscina}
-              alt="Piscina e área gourmet da Área de Lazer Biel"
-              width={1920}
-              height={1024}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"
-              aria-hidden
-            />
-            <div className="absolute inset-x-0 bottom-0 space-y-2.5 p-6 sm:p-9">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[0.7rem] font-bold tracking-widest text-white uppercase backdrop-blur">
-                <Sparkles className="size-3" aria-hidden />
-                Reserva online em menos de 1 minuto
-              </span>
-              <h1 className="font-display max-w-2xl text-3xl leading-tight font-semibold text-white text-balance sm:text-5xl">
-                Área de Lazer Biel
-              </h1>
-              <p className="max-w-lg text-sm text-white/85 sm:text-base">
-                Um refúgio com piscina e área gourmet para os seus melhores momentos. Escolha a
-                data, confirme seus dados e pronto.
-              </p>
-            </div>
-          </div>
+      {/* Hero */}
+      <section className="relative isolate">
+        <img
+          src={heroPiscina}
+          alt="Piscina e área gourmet da Área de Lazer Biel"
+          width={1920}
+          height={1024}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background"
+          aria-hidden
+        />
+        <div className="relative mx-auto flex min-h-[76vh] max-w-6xl flex-col justify-end gap-6 px-4 pt-24 pb-12 sm:px-6 sm:pt-32 sm:pb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+            className="space-y-5"
+          >
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-[0.7rem] font-bold tracking-[0.25em] text-primary uppercase backdrop-blur">
+              <Sparkles className="size-3" aria-hidden />
+              Reservas online
+            </span>
+            <h1 className="font-display max-w-3xl text-4xl leading-[1.05] font-semibold text-foreground text-balance sm:text-6xl lg:text-7xl">
+              Área de Lazer Biel
+            </h1>
+            <p className="max-w-xl text-lg text-foreground/80 sm:text-2xl">
+              Seu dia de descanso começa aqui.
+            </p>
+            <p className="text-sm font-medium tracking-[0.18em] text-primary uppercase">
+              Piscina • Área gourmet • Espaço exclusivo
+            </p>
+          </motion.div>
 
-          {/* Destaques */}
-          <div className="grid grid-cols-1 gap-px border-b bg-border sm:grid-cols-3">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
+            className="grid gap-px overflow-hidden rounded-3xl border border-border/70 bg-border/60 shadow-elegant sm:grid-cols-3"
+          >
             {destaques.map((item) => (
-              <div key={item.rotulo} className="flex items-center gap-4 bg-card p-5 sm:p-6">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-soft">
-                  <item.icone className="size-5 text-primary" aria-hidden />
+              <div
+                key={item.rotulo}
+                className="flex items-center gap-4 bg-card/85 p-5 backdrop-blur-xl sm:p-6"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/12 text-primary">
+                  <item.icone className="size-5" aria-hidden />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                  <p className="text-[0.65rem] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                     {item.rotulo}
                   </p>
                   <p className="truncate font-semibold">{item.texto}</p>
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
+        </div>
+      </section>
 
+      <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+        <AnimatePresence>
           {concluido && (
-            <Alert className="rounded-none border-0 border-b border-success/30 bg-success/10">
-              <AlertDescription className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-                <span>
-                  Reserva confirmada para <strong>{formatarData(concluido)}</strong>. Em breve
-                  entraremos em contato pelo WhatsApp para combinar o pagamento.
-                </span>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Calendário + Formulário */}
-          <div className="flex flex-col lg:flex-row">
-            {/* Calendário */}
-            <section
-              className="p-5 sm:p-8 lg:w-3/5 lg:border-r"
-              aria-label="Calendário de disponibilidade"
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-8"
             >
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="font-display text-xl font-semibold sm:text-2xl">
-                  Selecione a data
-                </h2>
-                <div className="flex items-center gap-1.5">
+              <Alert className="rounded-2xl border-primary/30 bg-primary/10">
+                <AlertDescription className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                  <span>
+                    Reserva confirmada para <strong>{formatarData(concluido)}</strong>. Em breve
+                    entraremos em contato pelo WhatsApp para combinar o pagamento.
+                  </span>
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+          {/* Calendário */}
+          <section
+            className="rounded-3xl border border-border/70 bg-card/80 p-5 shadow-elegant backdrop-blur-xl sm:p-8"
+            aria-label="Calendário de disponibilidade"
+          >
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-2xl font-semibold sm:text-3xl">Escolha sua data</h2>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Mês anterior"
+                  onClick={() => setMes(addMonths(mes, -1))}
+                >
+                  <ChevronLeft className="size-4" aria-hidden />
+                </Button>
+                <span className="min-w-34 text-center text-sm font-semibold lowercase first-letter:uppercase">
+                  {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Próximo mês"
+                  onClick={() => setMes(addMonths(mes, 1))}
+                >
+                  <ChevronRight className="size-4" aria-hidden />
+                </Button>
+              </div>
+            </div>
+
+            <div className="mb-3 grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+              {DIAS.map((dia) => (
+                <span key={dia}>{dia}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+              {dias.map((dia) => {
+                const chave = chaveDia(dia);
+                const foraDoMes = !isSameMonth(dia, mes);
+                const passado = isBefore(dia, hoje);
+                const indisponivel = ocupadas.has(chave);
+                const desabilitado = passado || indisponivel;
+                const selecionado = dataEscolhida === chave;
+                return (
+                  <motion.button
+                    key={chave}
+                    type="button"
+                    whileHover={desabilitado ? undefined : { y: -3 }}
+                    whileTap={desabilitado ? undefined : { scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                    disabled={desabilitado}
+                    onClick={() => {
+                      setDataEscolhida(chave);
+                      setErro(null);
+                      setConcluido(null);
+                    }}
+                    aria-label={`${formatarData(chave)} — ${indisponivel ? "indisponível" : "disponível"}`}
+                    className={cn(
+                      "relative flex aspect-square flex-col items-center justify-center rounded-2xl border text-sm font-semibold transition-colors duration-200",
+                      foraDoMes && "opacity-30",
+                      desabilitado
+                        ? "cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground/70 line-through decoration-1"
+                        : "border-primary/25 bg-primary/8 text-foreground hover:border-primary hover:bg-primary/15",
+                      selecionado &&
+                        "border-transparent bg-primary text-primary-foreground shadow-glow hover:bg-primary",
+                    )}
+                  >
+                    <span className="tabular-nums">{format(dia, "d")}</span>
+                    {!desabilitado && !selecionado && (
+                      <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 border-t border-border/60 pt-5 text-xs font-medium text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <span className="size-3 rounded-full border border-primary/40 bg-primary/15" />
+                Disponível
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="size-3 rounded-full bg-muted" /> Ocupado
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="size-3 rounded-full bg-primary" /> Selecionado
+              </span>
+            </div>
+          </section>
+
+          {/* Formulário */}
+          <section
+            className="rounded-3xl border border-border/70 bg-card/80 p-5 shadow-elegant backdrop-blur-xl sm:p-8 lg:sticky lg:top-24"
+            aria-label="Dados da reserva"
+          >
+            <h2 className="font-display mb-6 flex items-center gap-2.5 text-2xl font-semibold sm:text-3xl">
+              <CalendarCheck className="size-6 text-primary" aria-hidden />
+              Finalize sua reserva
+            </h2>
+            <form
+              className="space-y-5"
+              onSubmit={(evento) => {
+                evento.preventDefault();
+                enviar.mutate();
+              }}
+            >
+              <div
+                className={cn(
+                  "rounded-2xl border p-4 text-sm transition-colors",
+                  dataEscolhida
+                    ? "border-primary/40 bg-primary/10"
+                    : "border-dashed border-border bg-background/40",
+                )}
+              >
+                {dataEscolhida ? (
+                  <>
+                    <p className="text-[0.65rem] font-bold tracking-[0.2em] text-primary uppercase">
+                      Resumo
+                    </p>
+                    <p className="font-display mt-1 text-lg font-semibold">
+                      {formatarData(dataEscolhida)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Das {entrada} às {saida}
+                      {configuracoes?.valorPadrao
+                        ? ` · ${formatarMoeda(configuracoes.valorPadrao)}`
+                        : ""}
+                      {` · ${convidados} convidado${convidados === 1 ? "" : "s"}`}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Escolha uma data disponível no calendário.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="publico-nome"
+                  className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                  Nome completo
+                </Label>
+                <Input
+                  id="publico-nome"
+                  className="h-12 rounded-xl bg-background/60"
+                  value={nome}
+                  onChange={(evento) => setNome(evento.target.value)}
+                  placeholder="Como devemos te chamar?"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="publico-telefone"
+                  className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                  WhatsApp
+                </Label>
+                <CampoTelefone
+                  id="publico-telefone"
+                  className="h-12 rounded-xl bg-background/60"
+                  value={telefone}
+                  onChange={(valor) => setTelefone(valor)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                  Convidados
+                </Label>
+                <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 px-3 py-2">
                   <Button
-                    variant="outline"
+                    type="button"
+                    variant="ghost"
                     size="icon"
                     className="rounded-full"
-                    aria-label="Mês anterior"
-                    onClick={() => setMes(addMonths(mes, -1))}
+                    aria-label="Menos convidados"
+                    onClick={() => setConvidados((n) => Math.max(1, n - 1))}
                   >
-                    <ChevronLeft className="size-4" aria-hidden />
+                    <Minus className="size-4" aria-hidden />
                   </Button>
-                  <span className="min-w-32 text-center text-sm font-semibold lowercase first-letter:uppercase">
-                    {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
+                  <span className="text-lg font-bold tabular-nums" aria-live="polite">
+                    {convidados}
                   </span>
                   <Button
-                    variant="outline"
+                    type="button"
+                    variant="ghost"
                     size="icon"
                     className="rounded-full"
-                    aria-label="Próximo mês"
-                    onClick={() => setMes(addMonths(mes, 1))}
+                    aria-label="Mais convidados"
+                    onClick={() => setConvidados((n) => Math.min(200, n + 1))}
                   >
-                    <ChevronRight className="size-4" aria-hidden />
+                    <Plus className="size-4" aria-hidden />
                   </Button>
                 </div>
               </div>
 
-              <div className="mb-3 grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-bold tracking-widest text-muted-foreground uppercase">
-                {DIAS.map((dia) => (
-                  <span key={dia}>{dia}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                {dias.map((dia) => {
-                  const chave = chaveDia(dia);
-                  const foraDoMes = !isSameMonth(dia, mes);
-                  const passado = isBefore(dia, hoje);
-                  const indisponivel = ocupadas.has(chave);
-                  const desabilitado = passado || indisponivel;
-                  const selecionado = dataEscolhida === chave;
-                  return (
-                    <button
-                      key={chave}
-                      type="button"
-                      disabled={desabilitado}
-                      onClick={() => {
-                        setDataEscolhida(chave);
-                        setErro(null);
-                        setConcluido(null);
-                      }}
-                      aria-label={`${formatarData(chave)} — ${indisponivel ? "indisponível" : "disponível"}`}
-                      className={cn(
-                        "relative flex aspect-square flex-col items-center justify-center rounded-xl border text-sm font-semibold transition-all duration-200",
-                        foraDoMes && "opacity-35",
-                        desabilitado
-                          ? "cursor-not-allowed border-transparent bg-muted text-muted-foreground"
-                          : "border-success/30 bg-success/10 text-foreground hover:-translate-y-0.5 hover:border-success hover:shadow-soft",
-                        selecionado &&
-                          "border-transparent brand-gradient text-primary-foreground shadow-glow hover:-translate-y-0.5",
-                      )}
-                    >
-                      <span className="tabular-nums">{format(dia, "d")}</span>
-                      {!desabilitado && !selecionado && (
-                        <span className="mt-1 size-1.5 rounded-full bg-success" aria-hidden />
-                      )}
-                      {desabilitado && !passado && (
-                        <span
-                          className="mt-1 h-0.5 w-4 rounded-full bg-muted-foreground/50"
-                          aria-hidden
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="publico-obs"
+                  className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
+                >
+                  Observações (opcional)
+                </Label>
+                <Textarea
+                  id="publico-obs"
+                  rows={3}
+                  className="resize-none rounded-xl bg-background/60"
+                  value={observacoes}
+                  onChange={(evento) => setObservacoes(evento.target.value)}
+                  placeholder="Tipo de evento, horário de chegada, etc."
+                />
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t pt-4 text-xs font-medium text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded-full border border-success/40 bg-success/15" />{" "}
-                  Disponível
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded-full bg-muted" /> Ocupado / bloqueado
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded-full brand-gradient" /> Sua escolha
-                </span>
-              </div>
-            </section>
+              {erro && (
+                <Alert variant="destructive">
+                  <AlertDescription>{erro}</AlertDescription>
+                </Alert>
+              )}
 
-            {/* Formulário */}
-            <section className="bg-muted/40 p-5 sm:p-8 lg:w-2/5" aria-label="Dados da reserva">
-              <h2 className="font-display mb-6 flex items-center gap-2 text-xl font-semibold sm:text-2xl">
-                <CalendarCheck className="size-5 text-primary" aria-hidden />
-                Finalizar reserva
-              </h2>
-              <form
-                className="space-y-5"
-                onSubmit={(evento) => {
-                  evento.preventDefault();
-                  enviar.mutate();
-                }}
+              <Button
+                type="submit"
+                size="lg"
+                className="group h-13 w-full rounded-xl text-base font-bold shadow-glow transition-transform active:scale-[0.98]"
+                disabled={enviar.isPending || !dataEscolhida}
               >
-                <div
-                  className={cn(
-                    "rounded-2xl border p-4 text-sm transition-colors",
-                    dataEscolhida
-                      ? "border-primary/30 bg-primary-soft"
-                      : "border-dashed bg-card/60",
-                  )}
-                >
-                  {dataEscolhida ? (
-                    <>
-                      <p className="font-display font-semibold">{formatarData(dataEscolhida)}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Das {entrada} às {saida}
-                        {configuracoes?.valorPadrao
-                          ? ` · ${formatarMoeda(configuracoes.valorPadrao)}`
-                          : ""}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      Escolha uma data disponível no calendário.
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="publico-nome"
-                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
-                  >
-                    Nome completo
-                  </Label>
-                  <Input
-                    id="publico-nome"
-                    className="h-11 rounded-xl bg-card"
-                    value={nome}
-                    onChange={(evento) => setNome(evento.target.value)}
-                    placeholder="Como devemos te chamar?"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="publico-telefone"
-                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
-                  >
-                    WhatsApp
-                  </Label>
-                  <CampoTelefone
-                    id="publico-telefone"
-                    className="h-11 rounded-xl bg-card"
-                    value={telefone}
-                    onChange={(valor) => setTelefone(valor)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="publico-obs"
-                    className="text-xs font-bold tracking-widest text-muted-foreground uppercase"
-                  >
-                    Observações (opcional)
-                  </Label>
-                  <Textarea
-                    id="publico-obs"
-                    rows={3}
-                    className="resize-none rounded-xl bg-card"
-                    value={observacoes}
-                    onChange={(evento) => setObservacoes(evento.target.value)}
-                    placeholder="Quantidade de convidados, tipo de evento, etc."
-                  />
-                </div>
-
-                {erro && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{erro}</AlertDescription>
-                  </Alert>
+                {enviar.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Confirmando sua reserva...
+                  </>
+                ) : (
+                  <>
+                    Confirmar reserva
+                    <ArrowRight
+                      className="size-4 transition-transform group-hover:translate-x-1"
+                      aria-hidden
+                    />
+                  </>
                 )}
+              </Button>
+              <p className="px-2 text-center text-xs text-muted-foreground">
+                A reserva fica registrada como pendente de pagamento. Entraremos em contato pelo
+                WhatsApp para confirmar os detalhes.
+              </p>
+            </form>
+          </section>
+        </div>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="h-12 w-full rounded-xl text-base font-bold shadow-glow transition-transform active:scale-[0.98]"
-                  disabled={enviar.isPending || !dataEscolhida}
-                >
-                  {enviar.isPending
-                    ? "Reservando..."
-                    : dataEscolhida
-                      ? `Solicitar reserva para ${formatarData(dataEscolhida)}`
-                      : "Confirmar reserva"}
-                </Button>
-                <p className="px-2 text-center text-xs text-muted-foreground">
-                  A reserva fica registrada como pendente de pagamento. Entraremos em contato pelo
-                  WhatsApp para confirmar os detalhes.
-                </p>
-              </form>
-            </section>
-          </div>
-        </motion.div>
+        {/* Benefícios */}
+        <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Benefícios">
+          {BENEFICIOS.map((item) => (
+            <div
+              key={item.texto}
+              className="card-hover flex items-center gap-3 rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+                <item.icone className="size-4.5" aria-hidden />
+              </span>
+              <p className="min-w-0 text-sm font-semibold">{item.texto}</p>
+            </div>
+          ))}
+        </section>
 
-        <footer className="py-8 text-center text-xs text-muted-foreground">
+        <footer className="pt-12 text-center text-xs text-muted-foreground">
           Área de Lazer Biel · Reservas online
         </footer>
       </main>

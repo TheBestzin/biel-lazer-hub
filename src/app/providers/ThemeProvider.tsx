@@ -20,11 +20,11 @@ function aplicar(tema: Tema): boolean {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [tema, setTema] = useState<Tema>("system");
-  const [escuroAtivo, setEscuroAtivo] = useState(false);
+  const [tema, setTema] = useState<Tema>("dark");
+  const [escuroAtivo, setEscuroAtivo] = useState(true);
 
   useEffect(() => {
-    const salvo = (localStorage.getItem(CHAVE) as Tema | null) ?? "system";
+    const salvo = (localStorage.getItem(CHAVE) as Tema | null) ?? "dark";
     setTema(salvo);
     setEscuroAtivo(aplicar(salvo));
   }, []);
