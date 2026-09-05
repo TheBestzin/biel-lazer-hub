@@ -33,7 +33,10 @@ import {
   Wallet,
 } from "lucide-react";
 
-import heroPiscina from "@/assets/hero-piscina.jpg";
+import espaco1 from "@/assets/espaco-1.jpg.asset.json";
+import espaco2 from "@/assets/espaco-2.jpg.asset.json";
+import espaco3 from "@/assets/espaco-3.jpg.asset.json";
+import espaco4 from "@/assets/espaco-4.jpg.asset.json";
 import { AppLogo } from "@/components/app/AppLogo";
 import { CampoTelefone } from "@/components/app/CamposMascarados";
 import { Button } from "@/components/ui/button";
