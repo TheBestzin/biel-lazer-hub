@@ -92,6 +92,15 @@ const GALERIA = [
 
 function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => startOfMonth(new Date()));
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSlide((atual) => (atual + 1) % GALERIA.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const [dataEscolhida, setDataEscolhida] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
