@@ -83,6 +83,13 @@ const BENEFICIOS = [
   { icone: MessageCircle, texto: "Reserva rápida pelo WhatsApp" },
 ];
 
+const GALERIA = [
+  { url: espaco1.url, legenda: "Piscina com deck de madeira" },
+  { url: espaco4.url, legenda: "Área gourmet e coqueiros" },
+  { url: espaco2.url, legenda: "Gramado e vista do espaço" },
+  { url: espaco3.url, legenda: "Área coberta com rede de descanso" },
+];
+
 function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => startOfMonth(new Date()));
   const [dataEscolhida, setDataEscolhida] = useState<string | null>(null);
@@ -266,7 +273,7 @@ function PaginaReservarPublica() {
       {/* Hero */}
       <section className="relative isolate">
         <img
-          src={heroPiscina}
+          src={espaco1.url}
           alt="Piscina e área gourmet da Área de Lazer Biel"
           width={1920}
           height={1024}
@@ -597,6 +604,34 @@ function PaginaReservarPublica() {
             </form>
           </section>
         </div>
+
+        {/* Galeria do espaço */}
+        <section className="mt-12" aria-label="Fotos do espaço">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <h2 className="font-display text-2xl font-bold sm:text-3xl">Conheça o espaço</h2>
+            <p className="hidden text-sm text-muted-foreground sm:block">
+              Fotos reais da nossa área de lazer
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {GALERIA.map((foto) => (
+              <figure
+                key={foto.url}
+                className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/60"
+              >
+                <img
+                  src={foto.url}
+                  alt={foto.legenda}
+                  loading="lazy"
+                  className="h-52 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-56"
+                />
+                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent p-3 text-xs font-medium text-foreground">
+                  {foto.legenda}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
 
         {/* Benefícios */}
         <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Benefícios">
