@@ -84,10 +84,10 @@ const BENEFICIOS = [
 ];
 
 const GALERIA = [
-  { url: espaco1.url, legenda: "Piscina com deck de madeira" },
-  { url: espaco4.url, legenda: "Área gourmet e coqueiros" },
-  { url: espaco2.url, legenda: "Gramado e vista do espaço" },
-  { url: espaco3.url, legenda: "Área coberta com rede de descanso" },
+  { url: espaco4.url, legenda: "Piscina com deck de madeira" },
+  { url: espaco1.url, legenda: "Coqueiros e área gourmet" },
+  { url: espaco2.url, legenda: "Área coberta com rede de descanso" },
+  { url: espaco3.url, legenda: "Gramado e vista do espaço" },
 ];
 
 function PaginaReservarPublica() {
@@ -273,7 +273,7 @@ function PaginaReservarPublica() {
       {/* Hero */}
       <section className="relative isolate">
         <img
-          src={espaco1.url}
+          src={espaco4.url}
           alt="Piscina e área gourmet da Área de Lazer Biel"
           width={1920}
           height={1024}
