@@ -393,8 +393,7 @@ function PaginaReservarPublica() {
                   <motion.button
                     key={chave}
                     type="button"
-                    whileHover={desabilitado ? undefined : { y: -3 }}
-                    whileTap={desabilitado ? undefined : { scale: 0.95 }}
+                    {...(desabilitado ? {} : { whileHover: { y: -3 }, whileTap: { scale: 0.95 } })}
                     transition={{ type: "spring", stiffness: 420, damping: 26 }}
                     disabled={desabilitado}
                     onClick={() => {
