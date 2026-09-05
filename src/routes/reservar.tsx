@@ -92,6 +92,15 @@ const GALERIA = [
 
 function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => startOfMonth(new Date()));
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSlide((atual) => (atual + 1) % GALERIA.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const [dataEscolhida, setDataEscolhida] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -272,17 +281,25 @@ function PaginaReservarPublica() {
 
       {/* Hero */}
       <section className="relative isolate">
-        <img
-          src={espaco4.url}
-          alt="Piscina e área gourmet da Área de Lazer Biel"
-          width={1920}
-          height={1024}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <div className="absolute inset-0 overflow-hidden" aria-hidden>
+          <AnimatePresence initial={false}>
+            <motion.img
+              key={GALERIA[slide]!.url}
+              src={GALERIA[slide]!.url}
+              alt=""
+              initial={{ opacity: 0, scale: 1.12 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 1.6, ease: "easeInOut" }, scale: { duration: 7, ease: "linear" } }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </AnimatePresence>
+        </div>
         <div
           className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background"
           aria-hidden
         />
+
         <div className="relative mx-auto flex min-h-[76vh] max-w-6xl flex-col justify-end gap-6 px-4 pt-24 pb-12 sm:px-6 sm:pt-32 sm:pb-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
