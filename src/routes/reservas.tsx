@@ -3,6 +3,7 @@ import {
   CalendarPlus,
   CheckSquare,
   FileText,
+  MessageCircle,
   Pencil,
   Search,
   Trash2,
@@ -18,6 +19,7 @@ import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/Statu
 import { ChecklistDialog } from "@/components/reservas/ChecklistDialog";
 import { ContratoDialog } from "@/components/reservas/ContratoDialog";
 import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
+import { MensagemGrupoDialog } from "@/components/reservas/MensagemGrupoDialog";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,6 +67,7 @@ function PaginaReservas() {
   const [checklist, setChecklist] = useState<Reserva | null>(null);
   const [paraCancelar, setParaCancelar] = useState<Reserva | null>(null);
   const [paraExcluir, setParaExcluir] = useState<Reserva | null>(null);
+  const [mensagemAberta, setMensagemAberta] = useState(false);
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -130,15 +133,21 @@ function PaginaReservas() {
         titulo="Reservas"
         descricao="Locações, pagamentos, contratos e encerramento com checklist."
         acoes={
-          <Button
-            onClick={() => {
-              setEmEdicao(null);
-              setFormAberto(true);
-            }}
-          >
-            <CalendarPlus className="size-4" aria-hidden />
-            Nova reserva
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setMensagemAberta(true)}>
+              <MessageCircle className="size-4" aria-hidden />
+              Mensagem do grupo
+            </Button>
+            <Button
+              onClick={() => {
+                setEmEdicao(null);
+                setFormAberto(true);
+              }}
+            >
+              <CalendarPlus className="size-4" aria-hidden />
+              Nova reserva
+            </Button>
+          </div>
         }
       />
 
@@ -253,6 +262,11 @@ function PaginaReservas() {
         </div>
       )}
 
+      <MensagemGrupoDialog
+        aberto={mensagemAberta}
+        aoFechar={() => setMensagemAberta(false)}
+        reservas={reservas}
+      />
       <ReservaFormDialog
         aberto={formAberto}
         aoFechar={() => setFormAberto(false)}
