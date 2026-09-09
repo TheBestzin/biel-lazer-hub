@@ -94,6 +94,14 @@ function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => startOfMonth(new Date()));
   const [slide, setSlide] = useState(0);
 
+  // Pré-carrega todas as fotos para o carrossel nunca aparecer vazio.
+  useEffect(() => {
+    GALERIA.forEach((foto) => {
+      const img = new Image();
+      img.src = foto.url;
+    });
+  }, []);
+
   useEffect(() => {
     const id = window.setInterval(() => {
       setSlide((atual) => (atual + 1) % GALERIA.length);
@@ -281,12 +289,19 @@ function PaginaReservarPublica() {
 
       {/* Hero */}
       <section className="relative isolate">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden>
+        <div
+          className="absolute inset-0 overflow-hidden bg-slate-900 bg-cover bg-center"
+          style={{ backgroundImage: `url(${GALERIA[0]!.url})` }}
+          aria-hidden
+        >
           <AnimatePresence initial={false}>
             <motion.img
               key={GALERIA[slide]!.url}
               src={GALERIA[slide]!.url}
               alt=""
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
               initial={{ opacity: 0, scale: 1.12 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
@@ -639,7 +654,8 @@ function PaginaReservarPublica() {
                 <img
                   src={foto.url}
                   alt={foto.legenda}
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
                   className="h-52 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-56"
                 />
                 <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent p-3 text-xs font-medium text-foreground">
