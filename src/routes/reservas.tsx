@@ -130,15 +130,21 @@ function PaginaReservas() {
         titulo="Reservas"
         descricao="Locações, pagamentos, contratos e encerramento com checklist."
         acoes={
-          <Button
-            onClick={() => {
-              setEmEdicao(null);
-              setFormAberto(true);
-            }}
-          >
-            <CalendarPlus className="size-4" aria-hidden />
-            Nova reserva
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setMensagemAberta(true)}>
+              <MessageCircle className="size-4" aria-hidden />
+              Mensagem do grupo
+            </Button>
+            <Button
+              onClick={() => {
+                setEmEdicao(null);
+                setFormAberto(true);
+              }}
+            >
+              <CalendarPlus className="size-4" aria-hidden />
+              Nova reserva
+            </Button>
+          </div>
         }
       />
 
