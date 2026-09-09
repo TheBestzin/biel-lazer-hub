@@ -70,6 +70,10 @@ export const Route = createFileRoute("/reservar")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [
+      { rel: "preload", as: "image", href: espaco4.url },
+      { rel: "preload", as: "image", href: espaco1.url },
+    ],
   }),
   component: PaginaReservarPublica,
 });
