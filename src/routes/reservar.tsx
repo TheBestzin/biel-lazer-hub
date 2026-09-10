@@ -33,10 +33,6 @@ import {
   Wallet,
 } from "lucide-react";
 
-import espaco1 from "@/assets/espaco-1.jpg.asset.json";
-import espaco2 from "@/assets/espaco-2.jpg.asset.json";
-import espaco3 from "@/assets/espaco-3.jpg.asset.json";
-import espaco4 from "@/assets/espaco-4.jpg.asset.json";
 import { AppLogo } from "@/components/app/AppLogo";
 import { CampoTelefone } from "@/components/app/CamposMascarados";
 import { Button } from "@/components/ui/button";
@@ -52,6 +48,11 @@ import { ReservaService } from "@/services/ReservaService";
 import { chaveDia, formatarData, formatarMoeda } from "@/utils/formatadores";
 import { validarTelefone } from "@/utils/documentos";
 import { cn } from "@/lib/utils";
+
+const espaco1 = { url: "/espaco/espaco-1.jpg" };
+const espaco2 = { url: "/espaco/espaco-2.jpg" };
+const espaco3 = { url: "/espaco/espaco-3.jpg" };
+const espaco4 = { url: "/espaco/espaco-4.jpg" };
 
 export const Route = createFileRoute("/reservar")({
   head: () => ({
