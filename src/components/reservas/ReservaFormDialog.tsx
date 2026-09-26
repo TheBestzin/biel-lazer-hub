@@ -23,7 +23,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { STATUS_PAGAMENTO } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { chaves, useAcao, useBloqueios, useClientes, useConfiguracoes, useReservas } from "@/hooks/useDados";
+import {
+  chaves,
+  useAcao,
+  useBloqueios,
+  useClientes,
+  useConfiguracoes,
+  useReservas,
+} from "@/hooks/useDados";
 import { FinanceiroService } from "@/services/FinanceiroService";
 import { LogService } from "@/services/LogService";
 import { NotificacaoService } from "@/services/NotificacaoService";
@@ -38,7 +45,12 @@ interface ReservaFormDialogProps {
   dataInicial?: string | undefined;
 }
 
-export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: ReservaFormDialogProps) {
+export function ReservaFormDialog({
+  aberto,
+  aoFechar,
+  reserva,
+  dataInicial,
+}: ReservaFormDialogProps) {
   const { admin } = useAuth();
   const { data: clientes } = useClientes();
   const { data: reservas } = useReservas();
@@ -163,7 +175,13 @@ export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: Re
     },
     {
       sucesso: reserva ? "Reserva atualizada." : "Reserva criada.",
-      invalidar: [chaves.reservas, chaves.clientes, chaves.financeiro, chaves.logs, chaves.notificacoes],
+      invalidar: [
+        chaves.reservas,
+        chaves.clientes,
+        chaves.financeiro,
+        chaves.logs,
+        chaves.notificacoes,
+      ],
       aoConcluir: aoFechar,
     },
   );
@@ -276,15 +294,10 @@ export function ReservaFormDialog({ aberto, aoFechar, reserva, dataInicial }: Re
                     ...dados,
                     statusPagamento: status,
                     valorPago:
-                      status === "pago"
-                        ? dados.valor
-                        : status === "pendente"
-                          ? 0
-                          : dados.valorPago,
+                      status === "pago" ? dados.valor : status === "pendente" ? 0 : dados.valorPago,
                   });
                 }}
               >
-
                 <SelectTrigger id="reserva-status">
                   <SelectValue />
                 </SelectTrigger>

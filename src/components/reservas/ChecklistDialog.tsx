@@ -100,7 +100,11 @@ export function ChecklistDialog({ aberto, aoFechar, reserva }: ChecklistDialogPr
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => salvar.mutate(false)} disabled={salvar.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => salvar.mutate(false)}
+            disabled={salvar.isPending}
+          >
             Salvar
           </Button>
           <Button

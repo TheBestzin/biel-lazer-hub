@@ -21,7 +21,8 @@ export function montarMensagemGrupo(reservas: Reserva[]): string {
   const hoje = new Date().toISOString().slice(0, 10);
   const linhas = reservas
     .filter(
-      (reserva) => !reserva.deleted && reserva.statusReserva !== "cancelada" && reserva.data >= hoje,
+      (reserva) =>
+        !reserva.deleted && reserva.statusReserva !== "cancelada" && reserva.data >= hoje,
     )
     .sort((a, b) => a.data.localeCompare(b.data))
     .map((reserva) => `${formatarData(reserva.data)} - ${reserva.clienteNome}`);

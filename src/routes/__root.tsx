@@ -9,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { MotionConfig } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 
 import appCss from "../styles.css?url";
@@ -142,10 +143,12 @@ function RootComponent() {
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider delayDuration={200}>
-              <AuthGate>
-                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-                <Outlet />
-              </AuthGate>
+              <MotionConfig reducedMotion="user">
+                <AuthGate>
+                  {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                  <Outlet />
+                </AuthGate>
+              </MotionConfig>
               <Toaster
                 position="top-right"
                 toastOptions={{
