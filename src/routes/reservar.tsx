@@ -115,12 +115,19 @@ function PaginaReservarPublica() {
   }, []);
 
   const [dataEscolhida, setDataEscolhida] = useState<string | null>(null);
+  const [periodoOk, setPeriodoOk] = useState(false);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [convidados, setConvidados] = useState(10);
   const [observacoes, setObservacoes] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [concluido, setConcluido] = useState<string | null>(null);
+  const [tentouEnviar, setTentouEnviar] = useState(false);
+  const [direcao, setDirecao] = useState(1);
+  const [concluido, setConcluido] = useState<{
+    data: string;
+    nome: string;
+    convidados: number;
+  } | null>(null);
 
   // Força o visual escuro na página pública, sem alterar preferências salvas.
   useEffect(() => {
@@ -132,7 +139,11 @@ function PaginaReservarPublica() {
     };
   }, []);
 
-  const { data: reservas = [], refetch: recarregarReservas } = useQuery({
+  const {
+    data: reservas = [],
+    refetch: recarregarReservas,
+    isLoading: carregandoReservas,
+  } = useQuery({
     queryKey: ["publico", "reservas"],
     queryFn: () => ReservaService.listar(),
     staleTime: 30_000,
