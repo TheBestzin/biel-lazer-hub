@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { AlertCircle, KeyRound, Loader2, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { AppLogo } from "@/components/app/AppLogo";
+import { fadeInUp, quieto } from "@/lib/motion";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +16,13 @@ import { AdminService } from "@/services/AdminService";
 import { APP_SUBTITULO } from "@/constants";
 
 function Moldura({ children }: { children: React.ReactNode }) {
+  const reduzir = useReducedMotion();
   return (
     <div className="surface-gradient flex min-h-screen items-center justify-center px-4 py-10">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
+        variants={reduzir ? quieto.fadeInUp : fadeInUp}
+        initial="initial"
+        animate="animate"
         className="w-full max-w-md rounded-3xl border bg-card p-8 shadow-elevated"
       >
         <div className="flex flex-col items-center gap-3 text-center">
@@ -97,7 +99,10 @@ export function TelaLogin() {
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <div className="relative">
-            <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Mail
+              className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
             <Input
               id="email"
               type="email"
@@ -113,7 +118,10 @@ export function TelaLogin() {
         <div className="space-y-2">
           <Label htmlFor="senha">Senha</Label>
           <div className="relative">
-            <KeyRound className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <KeyRound
+              className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
             <Input
               id="senha"
               type="password"
@@ -130,7 +138,12 @@ export function TelaLogin() {
           {enviando && <Loader2 className="size-4 animate-spin" aria-hidden />}
           Entrar
         </Button>
-        <Button type="button" variant="ghost" className="w-full" onClick={() => void esqueciSenha()}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={() => void esqueciSenha()}
+        >
           Esqueci minha senha
         </Button>
         <p className="text-center text-xs text-muted-foreground">

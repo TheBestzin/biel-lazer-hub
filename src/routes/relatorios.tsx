@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BarChart3, CalendarCheck, PiggyBank, TrendingUp } from "lucide-react";
+import { BarChart3, CalendarCheck, PiggyBank, TrendingUp, Users } from "lucide-react";
 import { useMemo } from "react";
 import {
   Bar,
@@ -16,6 +16,8 @@ import {
 } from "recharts";
 
 import { AppStatCard } from "@/components/app/AppStatCard";
+import { AppEmptyState } from "@/components/app/AppEmptyState";
+import { Revelar } from "@/components/app/MotionUI";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATEGORIAS_DESPESA } from "@/constants";
@@ -28,7 +30,8 @@ export const Route = createFileRoute("/relatorios")({
       { title: "Relatórios — Área de Lazer Biel" },
       {
         name: "description",
-        content: "Indicadores de faturamento, ocupação, despesas por categoria e melhores clientes.",
+        content:
+          "Indicadores de faturamento, ocupação, despesas por categoria e melhores clientes.",
       },
       { property: "og:title", content: "Relatórios — Área de Lazer Biel" },
       { property: "og:description", content: "Indicadores e gráficos do desempenho do negócio." },
@@ -135,85 +138,101 @@ function PaginaRelatorios() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Receitas x despesas (6 meses)</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={serieMensal}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis dataKey="mes" tickLine={false} axisLine={false} fontSize={12} />
-              <YAxis tickLine={false} axisLine={false} fontSize={12} width={70} />
-              <ChartTooltip formatter={(valor: number) => formatarMoeda(valor)} />
-              <Legend />
-              <Bar dataKey="receita" name="Receita" fill={CORES[0]} radius={[6, 6, 0, 0]} />
-              <Bar dataKey="despesa" name="Despesa" fill={CORES[4]} radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Revelar>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Despesas por categoria</CardTitle>
+            <CardTitle className="text-base">Receitas x despesas (6 meses)</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            {porCategoria.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                Nenhuma despesa registrada ainda.
-              </p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={porCategoria} dataKey="valor" nameKey="nome" innerRadius={55} outerRadius={95}>
-                    {porCategoria.map((item, indice) => (
-                      <Cell key={item.nome} fill={CORES[indice % CORES.length]} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip formatter={(valor: number) => formatarMoeda(valor)} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={serieMensal}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="mes" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} fontSize={12} width={70} />
+                <ChartTooltip formatter={(valor: number) => formatarMoeda(valor)} />
+                <Legend />
+                <Bar dataKey="receita" name="Receita" fill={CORES[0]} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="despesa" name="Despesa" fill={CORES[4]} radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
+      </Revelar>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Melhores clientes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {melhoresClientes.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                Cadastre clientes para ver o ranking.
-              </p>
-            ) : (
-              melhoresClientes.map((cliente, indice) => (
-                <div
-                  key={cliente.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border bg-card/60 px-4 py-3"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-7 items-center justify-center rounded-lg bg-primary-soft text-xs font-semibold text-primary">
-                      {indice + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{cliente.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {cliente.totalReservas} reserva(s)
-                      </p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Revelar atraso={0.06}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Despesas por categoria</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {porCategoria.length === 0 ? (
+                <AppEmptyState
+                  icone={BarChart3}
+                  titulo="Nenhuma despesa registrada"
+                  descricao="Registre despesas para ver a distribuição por categoria."
+                />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={porCategoria}
+                      dataKey="valor"
+                      nameKey="nome"
+                      innerRadius={55}
+                      outerRadius={95}
+                    >
+                      {porCategoria.map((item, indice) => (
+                        <Cell key={item.nome} fill={CORES[indice % CORES.length]} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip formatter={(valor: number) => formatarMoeda(valor)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </Revelar>
+
+        <Revelar atraso={0.12}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Melhores clientes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {melhoresClientes.length === 0 ? (
+                <AppEmptyState
+                  icone={Users}
+                  titulo="Nenhum cliente no ranking"
+                  descricao="Cadastre clientes para ver quem mais reserva."
+                />
+              ) : (
+                melhoresClientes.map((cliente, indice) => (
+                  <div
+                    key={cliente.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border bg-card/60 px-4 py-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-7 items-center justify-center rounded-lg bg-primary-soft text-xs font-semibold text-primary">
+                        {indice + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{cliente.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {cliente.totalReservas} reserva(s)
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-sm font-semibold tabular-nums">
+                      {formatarMoeda(cliente.totalGasto)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums">
-                    {formatarMoeda(cliente.totalGasto)}
-                  </span>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </Revelar>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+
+import { fadeInDown, quieto } from "@/lib/motion";
 
 interface PageHeaderProps {
   titulo: string;
@@ -8,11 +10,12 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ titulo, descricao, acoes }: PageHeaderProps) {
+  const reduzir = useReducedMotion();
   return (
     <motion.header
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+      variants={reduzir ? quieto.fadeInDown : fadeInDown}
+      initial="initial"
+      animate="animate"
       className="relative overflow-hidden rounded-3xl border bg-card/70 p-5 shadow-elegant backdrop-blur sm:p-6"
     >
       <div className="pointer-events-none absolute inset-0 mesh-gradient opacity-70" aria-hidden />
@@ -22,9 +25,7 @@ export function PageHeader({ titulo, descricao, acoes }: PageHeaderProps) {
             <span className="h-6 w-1.5 shrink-0 rounded-full brand-gradient" aria-hidden />
             <h1 className="font-display truncate text-2xl font-bold sm:text-[1.75rem]">{titulo}</h1>
           </div>
-          {descricao && (
-            <p className="text-sm text-muted-foreground sm:pl-4">{descricao}</p>
-          )}
+          {descricao && <p className="text-sm text-muted-foreground sm:pl-4">{descricao}</p>}
         </div>
         {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
       </div>

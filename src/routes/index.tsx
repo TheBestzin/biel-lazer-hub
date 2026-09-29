@@ -1,13 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import {
-  CalendarCheck,
-  CalendarPlus,
-  CircleAlert,
-  TrendingUp,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { CalendarCheck, CalendarPlus, CircleAlert, TrendingUp, Users, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Area,
@@ -23,6 +16,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { AppStatCard } from "@/components/app/AppStatCard";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { CardsSkeleton, ListaSkeleton } from "@/components/app/AppLoading";
+import { AnimarNumero, ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
@@ -136,43 +130,52 @@ function Dashboard() {
         }
       />
 
-      {isLoading ? (
-        <CardsSkeleton />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <AppStatCard
-            indice={0}
-            titulo="Reservas do mês"
-            valor={String(resumo.reservasMes)}
-            icone={CalendarCheck}
-            variacao={resumo.variacaoReservas}
-            descricao="vs. mês anterior"
-          />
-          <AppStatCard
-            indice={1}
-            titulo="Faturamento"
-            valor={formatarMoeda(resumo.receitaMes)}
-            icone={Wallet}
-            variacao={resumo.variacaoReceita}
-            descricao="recebido no mês"
-          />
-          <AppStatCard
-            indice={2}
-            titulo="Lucro estimado"
-            valor={formatarMoeda(resumo.lucroMes)}
-            icone={TrendingUp}
-            descricao={`Despesas: ${formatarMoeda(resumo.despesasMes)}`}
-          />
-          <AppStatCard
-            indice={3}
-            titulo="Taxa de ocupação"
-            valor={`${resumo.ocupacao}%`}
-            icone={Users}
-            descricao={`${clientes.length} clientes cadastrados`}
-            dica="Reservas do mês dividido pelo total de dias."
-          />
-        </div>
-      )}
+      <TransicaoEstado estado={isLoading ? "carregando" : "pronto"}>
+        {isLoading ? (
+          <CardsSkeleton />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AppStatCard
+              indice={0}
+              titulo="Reservas do mês"
+              valor={String(resumo.reservasMes)}
+              valorNumerico={resumo.reservasMes}
+              icone={CalendarCheck}
+              variacao={resumo.variacaoReservas}
+              descricao="vs. mês anterior"
+            />
+            <AppStatCard
+              indice={1}
+              titulo="Faturamento"
+              valor={formatarMoeda(resumo.receitaMes)}
+              valorNumerico={resumo.receitaMes}
+              formato={formatarMoeda}
+              icone={Wallet}
+              variacao={resumo.variacaoReceita}
+              descricao="recebido no mês"
+            />
+            <AppStatCard
+              indice={2}
+              titulo="Lucro estimado"
+              valor={formatarMoeda(resumo.lucroMes)}
+              valorNumerico={resumo.lucroMes}
+              formato={formatarMoeda}
+              icone={TrendingUp}
+              descricao={`Despesas: ${formatarMoeda(resumo.despesasMes)}`}
+            />
+            <AppStatCard
+              indice={3}
+              titulo="Taxa de ocupação"
+              valor={`${resumo.ocupacao}%`}
+              valorNumerico={resumo.ocupacao}
+              formato={(n) => `${Math.round(n)}%`}
+              icone={Users}
+              descricao={`${clientes.length} clientes cadastrados`}
+              dica="Reservas do mês dividido pelo total de dias."
+            />
+          </div>
+        )}
+      </TransicaoEstado>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
@@ -193,8 +196,18 @@ function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="mes"
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <ChartTooltip
                   contentStyle={{
                     background: "var(--card)",
@@ -233,38 +246,41 @@ function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <ListaSkeleton linhas={4} />
-            ) : resumo.proximas.length === 0 ? (
-              <AppEmptyState
-                icone={CalendarPlus}
-                titulo="Nenhuma reserva futura"
-                descricao="Crie uma reserva para começar a preencher a agenda."
-                acao={{ label: "Nova reserva", aoClicar: () => setNovaReserva(true) }}
-              />
-            ) : (
-              <ul className="space-y-2">
-                {resumo.proximas.map((reserva) => (
-                  <li
-                    key={reserva.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{reserva.clienteNome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-sm font-semibold tabular-nums">
-                        {formatarMoeda(reserva.valor)}
-                      </span>
-                      <BadgeStatusPagamento status={reserva.statusPagamento} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <TransicaoEstado
+              estado={isLoading ? "carregando" : resumo.proximas.length === 0 ? "vazio" : "pronto"}
+            >
+              {isLoading ? (
+                <ListaSkeleton linhas={4} />
+              ) : resumo.proximas.length === 0 ? (
+                <AppEmptyState
+                  icone={CalendarPlus}
+                  titulo="Nenhuma reserva futura"
+                  descricao="Crie uma reserva para começar a preencher a agenda."
+                  acao={{ label: "Nova reserva", aoClicar: () => setNovaReserva(true) }}
+                />
+              ) : (
+                <ul className="space-y-2">
+                  {resumo.proximas.map((reserva, indice) => (
+                    <ItemLista key={reserva.id} indice={indice}>
+                      <li className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors duration-150 hover:border-primary/40">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{reserva.clienteNome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <span className="text-sm font-semibold tabular-nums">
+                            {formatarMoeda(reserva.valor)}
+                          </span>
+                          <BadgeStatusPagamento status={reserva.statusPagamento} />
+                        </div>
+                      </li>
+                    </ItemLista>
+                  ))}
+                </ul>
+              )}
+            </TransicaoEstado>
           </CardContent>
         </Card>
       </div>
@@ -275,8 +291,8 @@ function Dashboard() {
             <CircleAlert className="size-4 text-warning" aria-hidden />
             Pagamentos pendentes
           </CardTitle>
-          <span className="text-sm font-semibold text-warning">
-            {formatarMoeda(resumo.aReceber)} a receber
+          <span className="text-sm font-semibold text-warning tabular-nums">
+            <AnimarNumero valor={resumo.aReceber} formato={formatarMoeda} /> a receber
           </span>
         </CardHeader>
         <CardContent>

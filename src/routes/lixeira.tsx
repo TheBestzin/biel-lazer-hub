@@ -6,6 +6,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { ListaSkeleton } from "@/components/app/AppLoading";
+import { ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,38 +87,42 @@ function PaginaLixeira() {
         descricao="Itens removidos ficam aqui até serem restaurados ou excluídos de vez."
       />
 
-      {isLoading ? (
-        <ListaSkeleton />
-      ) : itens.length === 0 ? (
-        <AppEmptyState
-          icone={Trash2}
-          titulo="Lixeira vazia"
-          descricao="Nada foi removido do sistema até o momento."
-        />
-      ) : (
-        <div className="space-y-2">
-          {itens.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.titulo}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.colecao} · removido em {formatarDataHora(item.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => restaurar.mutate(item)}>
-                    <RotateCcw className="size-4" aria-hidden /> Restaurar
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setParaExcluir(item)}>
-                    <Trash2 className="size-4" aria-hidden /> Excluir
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <TransicaoEstado estado={isLoading ? "carregando" : itens.length === 0 ? "vazio" : "pronto"}>
+        {isLoading ? (
+          <ListaSkeleton />
+        ) : itens.length === 0 ? (
+          <AppEmptyState
+            icone={Trash2}
+            titulo="Lixeira vazia"
+            descricao="Nada foi removido do sistema até o momento."
+          />
+        ) : (
+          <div className="space-y-2">
+            {itens.map((item, indice) => (
+              <ItemLista key={item.id} indice={indice}>
+                <Card>
+                  <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{item.titulo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.colecao} · removido em {formatarDataHora(item.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => restaurar.mutate(item)}>
+                        <RotateCcw className="size-4" aria-hidden /> Restaurar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setParaExcluir(item)}>
+                        <Trash2 className="size-4" aria-hidden /> Excluir
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ItemLista>
+            ))}
+          </div>
+        )}
+      </TransicaoEstado>
 
       <AppConfirmDialog
         aberto={Boolean(paraExcluir)}

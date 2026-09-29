@@ -1,5 +1,8 @@
+import { motion } from "framer-motion";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppLogo } from "@/components/app/AppLogo";
+import { fadeIn } from "@/lib/motion";
 
 export function AppLoading({ mensagem = "Carregando..." }: { mensagem?: string }) {
   return (
@@ -24,11 +27,23 @@ export function TelaCarregamento() {
 
 export function ListaSkeleton({ linhas = 6 }: { linhas?: number }) {
   return (
-    <div className="space-y-2" aria-busy>
+    <motion.div
+      variants={fadeIn}
+      initial="initial"
+      animate="animate"
+      className="space-y-2"
+      aria-busy
+    >
       {Array.from({ length: linhas }).map((_, indice) => (
-        <Skeleton key={indice} className="h-14 w-full rounded-xl" />
+        <div key={indice} className="flex items-center gap-3 rounded-xl border bg-card p-4">
+          <Skeleton className="size-10 shrink-0 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

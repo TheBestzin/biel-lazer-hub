@@ -1,12 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarPlus, MessageCircle, Pencil } from "lucide-react";
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { PageHeader } from "@/components/app/PageHeader";
 import { AppLoading } from "@/components/app/AppLoading";
+import { ItemLista } from "@/components/app/MotionUI";
+import { fadeIn, quieto } from "@/lib/motion";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { AppBadge } from "@/components/app/AppBadge";
-import { BadgeStatusCliente, BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
+import {
+  BadgeStatusCliente,
+  BadgeStatusPagamento,
+  BadgeStatusReserva,
+} from "@/components/app/StatusBadges";
 import { ClienteFormDialog } from "@/components/clientes/ClienteFormDialog";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
@@ -38,16 +45,26 @@ function FichaCliente() {
   const [editar, setEditar] = useState(false);
   const [novaReserva, setNovaReserva] = useState(false);
 
-  if (isLoading) return <AppLoading mensagem="Carregando ficha do cliente..." />;
-  if (!cliente) {
-    return (
+  const reduzir = useReducedMotion();
+  // Cada estado (carregando / não encontrado / pronto) entra com fade —
+  // nunca troca seca entre estados da mesma região.
+  const moldura = {
+    carregando: (
+      <motion.div variants={reduzir ? quieto.fadeIn : fadeIn} initial="initial" animate="animate">
+        <AppLoading mensagem="Carregando ficha do cliente..." />
+      </motion.div>
+    ),
+    vazio: (
       <AppEmptyState
         icone={ArrowLeft}
         titulo="Cliente não encontrado"
         descricao="O registro pode ter sido removido ou movido para a lixeira."
       />
-    );
-  }
+    ),
+  } as const;
+
+  if (isLoading) return moldura.carregando;
+  if (!cliente) return moldura.vazio;
 
   const totalPago = reservas
     .filter((r) => r.statusReserva !== "cancelada")
@@ -67,7 +84,10 @@ function FichaCliente() {
 
       <PageHeader
         titulo={cliente.nome}
-        descricao={[cliente.cpf ? mascararCPF(cliente.cpf) : null, mascararTelefone(cliente.telefone)]
+        descricao={[
+          cliente.cpf ? mascararCPF(cliente.cpf) : null,
+          mascararTelefone(cliente.telefone),
+        ]
           .filter(Boolean)
           .join(" · ")}
         acoes={
@@ -173,8 +193,13 @@ function FichaCliente() {
             />
           ) : (
             <ul className="divide-y">
-              {reservas.map((reserva) => (
-                <li key={reserva.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              {reservas.map((reserva, indice) => (
+                <ItemLista
+                  key={reserva.id}
+                  indice={indice}
+                  elemento="li"
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{formatarData(reserva.data)}</p>
                     <p className="text-xs text-muted-foreground">
@@ -188,7 +213,7 @@ function FichaCliente() {
                       {formatarMoeda(reserva.valor)}
                     </span>
                   </div>
-                </li>
+                </ItemLista>
               ))}
             </ul>
           )}

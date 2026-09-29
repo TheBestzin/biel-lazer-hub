@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { ListaSkeleton } from "@/components/app/AppLoading";
+import { ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
 import { ChecklistDialog } from "@/components/reservas/ChecklistDialog";
@@ -153,8 +154,6 @@ function PaginaReservas() {
 
       <LembretesPagamento />
 
-
-
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <Tabs value={aba} onValueChange={setAba} className="lg:w-auto">
           <TabsList>
@@ -165,7 +164,10 @@ function PaginaReservas() {
           </TabsList>
         </Tabs>
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             className="pl-9"
             placeholder="Buscar por cliente"
@@ -189,78 +191,84 @@ function PaginaReservas() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <ListaSkeleton />
-      ) : filtradas.length === 0 ? (
-        <AppEmptyState
-          icone={CalendarPlus}
-          titulo="Nenhuma reserva encontrada"
-          descricao="Ajuste os filtros ou registre uma nova locação."
-          acao={{
-            label: "Nova reserva",
-            aoClicar: () => {
-              setEmEdicao(null);
-              setFormAberto(true);
-            },
-          }}
-        />
-      ) : (
-        <div className="space-y-3">
-          {filtradas.map((reserva) => (
-            <Card key={reserva.id}>
-              <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium">{reserva.clienteNome}</p>
-                    <BadgeStatusReserva status={reserva.statusReserva} />
-                    <BadgeStatusPagamento status={reserva.statusPagamento} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida} ·{" "}
-                    {formatarMoeda(reserva.valor)} (pago {formatarMoeda(reserva.valorPago)})
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setContrato(reserva)}>
-                    <FileText className="size-3.5" aria-hidden />
-                    Contrato
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setChecklist(reserva)}>
-                    <CheckSquare className="size-3.5" aria-hidden />
-                    Checklist
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setEmEdicao(reserva);
-                      setFormAberto(true);
-                    }}
-                  >
-                    <Pencil className="size-3.5" aria-hidden />
-                    Editar
-                  </Button>
-                  {reserva.statusReserva === "reservada" && (
-                    <Button variant="ghost" size="sm" onClick={() => setParaCancelar(reserva)}>
-                      <XCircle className="size-3.5" aria-hidden />
-                      Cancelar
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setParaExcluir(reserva)}
-                  >
-                    <Trash2 className="size-3.5" aria-hidden />
-                    Excluir
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <TransicaoEstado
+        estado={isLoading ? "carregando" : filtradas.length === 0 ? "vazio" : "pronto"}
+      >
+        {isLoading ? (
+          <ListaSkeleton />
+        ) : filtradas.length === 0 ? (
+          <AppEmptyState
+            icone={CalendarPlus}
+            titulo="Nenhuma reserva encontrada"
+            descricao="Ajuste os filtros ou registre uma nova locação."
+            acao={{
+              label: "Nova reserva",
+              aoClicar: () => {
+                setEmEdicao(null);
+                setFormAberto(true);
+              },
+            }}
+          />
+        ) : (
+          <div className="space-y-3">
+            {filtradas.map((reserva, indice) => (
+              <ItemLista key={reserva.id} indice={indice}>
+                <Card>
+                  <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">{reserva.clienteNome}</p>
+                        <BadgeStatusReserva status={reserva.statusReserva} />
+                        <BadgeStatusPagamento status={reserva.statusPagamento} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida} ·{" "}
+                        {formatarMoeda(reserva.valor)} (pago {formatarMoeda(reserva.valorPago)})
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setContrato(reserva)}>
+                        <FileText className="size-3.5" aria-hidden />
+                        Contrato
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setChecklist(reserva)}>
+                        <CheckSquare className="size-3.5" aria-hidden />
+                        Checklist
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEmEdicao(reserva);
+                          setFormAberto(true);
+                        }}
+                      >
+                        <Pencil className="size-3.5" aria-hidden />
+                        Editar
+                      </Button>
+                      {reserva.statusReserva === "reservada" && (
+                        <Button variant="ghost" size="sm" onClick={() => setParaCancelar(reserva)}>
+                          <XCircle className="size-3.5" aria-hidden />
+                          Cancelar
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setParaExcluir(reserva)}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                        Excluir
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ItemLista>
+            ))}
+          </div>
+        )}
+      </TransicaoEstado>
 
       <MensagemGrupoDialog
         aberto={mensagemAberta}
@@ -272,7 +280,11 @@ function PaginaReservas() {
         aoFechar={() => setFormAberto(false)}
         reserva={emEdicao}
       />
-      <ContratoDialog aberto={Boolean(contrato)} aoFechar={() => setContrato(null)} reserva={contrato} />
+      <ContratoDialog
+        aberto={Boolean(contrato)}
+        aoFechar={() => setContrato(null)}
+        reserva={contrato}
+      />
       <ChecklistDialog
         aberto={Boolean(checklist)}
         aoFechar={() => setChecklist(null)}

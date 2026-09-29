@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { AppBadge } from "@/components/app/AppBadge";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { ListaSkeleton } from "@/components/app/AppLoading";
+import { ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -74,7 +75,10 @@ function PaginaAuditoria() {
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             className="pl-9"
             placeholder="Buscar por ação ou usuário"
@@ -97,34 +101,40 @@ function PaginaAuditoria() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <ListaSkeleton />
-      ) : filtrados.length === 0 ? (
-        <AppEmptyState
-          icone={ClipboardList}
-          titulo="Nenhum registro encontrado"
-          descricao="As ações realizadas no sistema aparecerão nesta lista."
-        />
-      ) : (
-        <div className="space-y-2">
-          {filtrados.map((log) => (
-            <Card key={log.id}>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <AppBadge tom={TONS[log.acao] ?? "neutro"}>{log.acao}</AppBadge>
-                    <span className="text-xs text-muted-foreground">{log.colecao}</span>
-                  </div>
-                  <p className="text-sm font-medium">{log.descricao}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {log.usuarioNome} · {formatarDataHora(log.createdAt)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <TransicaoEstado
+        estado={isLoading ? "carregando" : filtrados.length === 0 ? "vazio" : "pronto"}
+      >
+        {isLoading ? (
+          <ListaSkeleton />
+        ) : filtrados.length === 0 ? (
+          <AppEmptyState
+            icone={ClipboardList}
+            titulo="Nenhum registro encontrado"
+            descricao="As ações realizadas no sistema aparecerão nesta lista."
+          />
+        ) : (
+          <div className="space-y-2">
+            {filtrados.map((log, indice) => (
+              <ItemLista key={log.id} indice={indice}>
+                <Card>
+                  <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <AppBadge tom={TONS[log.acao] ?? "neutro"}>{log.acao}</AppBadge>
+                        <span className="text-xs text-muted-foreground">{log.colecao}</span>
+                      </div>
+                      <p className="text-sm font-medium">{log.descricao}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {log.usuarioNome} · {formatarDataHora(log.createdAt)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ItemLista>
+            ))}
+          </div>
+        )}
+      </TransicaoEstado>
     </div>
   );
 }

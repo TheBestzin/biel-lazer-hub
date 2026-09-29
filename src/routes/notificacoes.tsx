@@ -6,6 +6,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { AppBadge } from "@/components/app/AppBadge";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { ListaSkeleton } from "@/components/app/AppLoading";
+import { ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,7 +70,9 @@ function PaginaNotificacoes() {
       <PageHeader
         titulo="Notificações"
         descricao={
-          naoLidas > 0 ? `${naoLidas} notificação(ões) não lida(s).` : "Nenhuma pendência no momento."
+          naoLidas > 0
+            ? `${naoLidas} notificação(ões) não lida(s).`
+            : "Nenhuma pendência no momento."
         }
         acoes={
           naoLidas > 0 ? (
@@ -88,44 +91,56 @@ function PaginaNotificacoes() {
         </TabsList>
       </Tabs>
 
-      {isLoading ? (
-        <ListaSkeleton />
-      ) : filtradas.length === 0 ? (
-        <AppEmptyState
-          icone={Bell}
-          titulo="Nenhuma notificação"
-          descricao="Novos alertas de reservas, pagamentos e clientes aparecem aqui."
-        />
-      ) : (
-        <div className="space-y-2">
-          {filtradas.map((notificacao) => (
-            <Card key={notificacao.id} className={notificacao.lida ? "opacity-70" : undefined}>
-              <CardContent className="flex items-start justify-between gap-4 p-4">
-                <div className="flex min-w-0 gap-3">
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                    <BellRing className="size-4" aria-hidden />
-                  </span>
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium">{notificacao.titulo}</p>
-                      <AppBadge tom={TONS[notificacao.tipo] ?? "neutro"}>{notificacao.tipo}</AppBadge>
+      <TransicaoEstado
+        estado={isLoading ? "carregando" : filtradas.length === 0 ? "vazio" : "pronto"}
+      >
+        {isLoading ? (
+          <ListaSkeleton />
+        ) : filtradas.length === 0 ? (
+          <AppEmptyState
+            icone={Bell}
+            titulo="Nenhuma notificação"
+            descricao="Novos alertas de reservas, pagamentos e clientes aparecem aqui."
+          />
+        ) : (
+          <div className="space-y-2">
+            {filtradas.map((notificacao, indice) => (
+              <ItemLista key={notificacao.id} indice={indice}>
+                <Card className={notificacao.lida ? "opacity-70" : undefined}>
+                  <CardContent className="flex items-start justify-between gap-4 p-4">
+                    <div className="flex min-w-0 gap-3">
+                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                        <BellRing className="size-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium">{notificacao.titulo}</p>
+                          <AppBadge tom={TONS[notificacao.tipo] ?? "neutro"}>
+                            {notificacao.tipo}
+                          </AppBadge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{notificacao.descricao}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarDataHora(notificacao.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{notificacao.descricao}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatarDataHora(notificacao.createdAt)}
-                    </p>
-                  </div>
-                </div>
-                {!notificacao.lida && (
-                  <Button variant="ghost" size="sm" onClick={() => marcarLida.mutate(notificacao)}>
-                    Marcar lida
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    {!notificacao.lida && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => marcarLida.mutate(notificacao)}
+                      >
+                        Marcar lida
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </ItemLista>
+            ))}
+          </div>
+        )}
+      </TransicaoEstado>
     </div>
   );
 }

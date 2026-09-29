@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Save, Settings, Users } from "lucide-react";
+import { Loader2, Save, Settings, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { AppBadge } from "@/components/app/AppBadge";
+import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { CampoMoeda, CampoTelefone } from "@/components/app/CamposMascarados";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,8 @@ function PaginaConfiguracoes() {
         descricao="Dados da empresa, padrões de reserva e modelo de contrato."
         acoes={
           <Button onClick={() => salvar.mutate(undefined as never)} disabled={salvar.isPending}>
-            <Save className="size-4" aria-hidden /> Salvar alterações
+            {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+            Salvar alterações
           </Button>
         }
       />
@@ -159,7 +161,11 @@ function PaginaConfiguracoes() {
         </CardHeader>
         <CardContent className="space-y-2">
           {admins.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum administrador cadastrado.</p>
+            <AppEmptyState
+              icone={Users}
+              titulo="Nenhum administrador cadastrado"
+              descricao="Membros da equipe com acesso aparecem aqui."
+            />
           ) : (
             admins.map((item) => (
               <div
@@ -170,7 +176,9 @@ function PaginaConfiguracoes() {
                   <p className="truncate text-sm font-medium">{item.nome}</p>
                   <p className="text-xs text-muted-foreground">
                     {item.email}
-                    {item.ultimoLogin ? ` · último acesso ${formatarDataHora(item.ultimoLogin)}` : ""}
+                    {item.ultimoLogin
+                      ? ` · último acesso ${formatarDataHora(item.ultimoLogin)}`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

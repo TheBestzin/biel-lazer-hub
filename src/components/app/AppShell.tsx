@@ -1,10 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
+import { fadeIn, pagina, quieto, springFisica } from "@/lib/motion";
+
 import { AppLogoCompleta } from "@/components/app/AppLogo";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NAVEGACAO } from "@/constants/navegacao";
 import { CARGOS } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -53,7 +56,6 @@ function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
         );
       })}
     </nav>
-
   );
 }
 
@@ -74,14 +76,19 @@ function PerfilRodape() {
             {admin ? CARGOS[admin.cargo] : ""}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Sair do sistema"
-          onClick={() => void encerrarSessao()}
-        >
-          <LogOut className="size-4" aria-hidden />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Sair do sistema"
+              onClick={() => void encerrarSessao()}
+            >
+              <LogOut className="size-4" aria-hidden />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Sair</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -90,6 +97,8 @@ function PerfilRodape() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const { tema, definirTema, escuroAtivo } = useTema();
+  const reduzirMovimento = useReducedMotion();
+  const caminho = useRouterState({ select: (estado) => estado.location.pathname });
 
   return (
     <div className="relative flex min-h-screen bg-background">
@@ -105,21 +114,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PerfilRodape />
       </aside>
 
-
       <AnimatePresence>
         {menuAberto && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             className="fixed inset-0 z-40 bg-foreground/40 lg:hidden"
             onClick={() => setMenuAberto(false)}
           >
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -288 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              exit={{ x: -288 }}
+              transition={reduzirMovimento ? { duration: 0 } : springFisica}
               className="flex h-full w-72 flex-col border-r bg-card p-4"
               onClick={(evento) => evento.stopPropagation()}
             >
@@ -158,22 +167,43 @@ export function AppShell({ children }: { children: ReactNode }) {
             <AppLogoCompleta compacto />
           </div>
           <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-xl"
-              aria-label={escuroAtivo ? "Ativar tema claro" : "Ativar tema escuro"}
-              onClick={() => definirTema(tema === "dark" ? "light" : "dark")}
-            >
-              {escuroAtivo ? <Sun className="size-4.5" aria-hidden /> : <Moon className="size-4.5" aria-hidden />}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-xl"
+                  aria-label={escuroAtivo ? "Ativar tema claro" : "Ativar tema escuro"}
+                  onClick={() => definirTema(tema === "dark" ? "light" : "dark")}
+                >
+                  {escuroAtivo ? (
+                    <Sun className="size-4.5" aria-hidden />
+                  ) : (
+                    <Moon className="size-4.5" aria-hidden />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{escuroAtivo ? "Tema claro" : "Tema escuro"}</TooltipContent>
+            </Tooltip>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 sm:px-6 lg:py-8">
-          {children}
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
+          {/* Transição de rota: fade + slide sutil, saída mais rápida que a
+              entrada (ver src/lib/motion.ts). Nunca corte seco. */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={caminho}
+              variants={reduzirMovimento ? quieto.pagina : pagina}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
-
     </div>
   );
 }

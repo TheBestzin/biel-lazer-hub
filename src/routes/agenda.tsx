@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, Ban, Clock, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   addMonths,
   eachDayOfInterval,
@@ -44,6 +45,8 @@ import type { MotivoBloqueio } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
 import { mascararTelefone } from "@/utils/documentos";
 import { cn } from "@/lib/utils";
+import { quieto, slideIn } from "@/lib/motion";
+import { ItemLista } from "@/components/app/MotionUI";
 
 export const Route = createFileRoute("/agenda")({
   head: () => ({
@@ -54,7 +57,10 @@ export const Route = createFileRoute("/agenda")({
         content: "Calendário de reservas, bloqueios de datas e lista de espera.",
       },
       { property: "og:title", content: "Agenda — Área de Lazer Biel" },
-      { property: "og:description", content: "Visualize a ocupação e bloqueie datas indisponíveis." },
+      {
+        property: "og:description",
+        content: "Visualize a ocupação e bloqueie datas indisponíveis.",
+      },
     ],
   }),
   component: PaginaAgenda,
@@ -66,6 +72,8 @@ function PaginaAgenda() {
   const { data: bloqueios } = useBloqueios();
   const { data: listaEspera } = useListaEspera();
   const [referencia, setReferencia] = useState(() => new Date());
+  const [direcao, setDirecao] = useState<"esquerda" | "direita">("direita");
+  const reduzir = useReducedMotion();
   const [novaReservaData, setNovaReservaData] = useState<string | null>(null);
   const [bloqueioAberto, setBloqueioAberto] = useState(false);
   const [dadosBloqueio, setDadosBloqueio] = useState<{
@@ -137,13 +145,34 @@ function PaginaAgenda() {
             {format(referencia, "MMMM 'de' yyyy", { locale: ptBR })}
           </CardTitle>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" onClick={() => setReferencia(addMonths(referencia, -1))}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDirecao("esquerda");
+                setReferencia(addMonths(referencia, -1));
+              }}
+            >
               Anterior
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setReferencia(new Date())}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDirecao("esquerda");
+                setReferencia(new Date());
+              }}
+            >
               Hoje
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setReferencia(addMonths(referencia, 1))}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDirecao("direita");
+                setReferencia(addMonths(referencia, 1));
+              }}
+            >
               Próximo
             </Button>
           </div>
@@ -156,41 +185,53 @@ function PaginaAgenda() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
-            {dias.map((dia) => {
-              const chave = format(dia, "yyyy-MM-dd");
-              const reserva = mapaReservas.get(chave);
-              const bloqueio = mapaBloqueios.get(chave);
-              const doMes = isSameMonth(dia, referencia);
-              return (
-                <button
-                  key={chave}
-                  type="button"
-                  onClick={() => !bloqueio && !reserva && setNovaReservaData(chave)}
-                  className={cn(
-                    "flex min-h-20 flex-col items-start gap-1 rounded-xl border p-2 text-left transition-colors",
-                    !doMes && "opacity-40",
-                    reserva && "border-primary/40 bg-primary-soft",
-                    bloqueio && "border-destructive/30 bg-destructive/10",
-                    !reserva && !bloqueio && "hover:border-primary/40",
-                  )}
-                  aria-label={`Dia ${format(dia, "dd/MM/yyyy")}`}
-                >
-                  <span className="text-xs font-semibold tabular-nums">{format(dia, "d")}</span>
-                  {reserva && (
-                    <span className="line-clamp-2 text-[11px] leading-tight font-medium text-primary">
-                      {reserva.clienteNome}
-                    </span>
-                  )}
-                  {bloqueio && (
-                    <span className="text-[11px] leading-tight font-medium text-destructive">
-                      {MOTIVOS_BLOQUEIO[bloqueio.motivo]}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Troca de mês: slide horizontal contínuo — o mês anterior
+              sai na direção oposta à do mês que entra (motion.ts: slideIn). */}
+          <AnimatePresence mode="wait" initial={false} custom={direcao}>
+            <motion.div
+              key={format(referencia, "yyyy-MM")}
+              custom={direcao}
+              variants={reduzir ? quieto.slideIn : slideIn(direcao)}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="grid grid-cols-7 gap-1"
+            >
+              {dias.map((dia) => {
+                const chave = format(dia, "yyyy-MM-dd");
+                const reserva = mapaReservas.get(chave);
+                const bloqueio = mapaBloqueios.get(chave);
+                const doMes = isSameMonth(dia, referencia);
+                return (
+                  <button
+                    key={chave}
+                    type="button"
+                    onClick={() => !bloqueio && !reserva && setNovaReservaData(chave)}
+                    className={cn(
+                      "flex min-h-20 flex-col items-start gap-1 rounded-xl border p-2 text-left transition-colors",
+                      !doMes && "opacity-40",
+                      reserva && "border-primary/40 bg-primary-soft",
+                      bloqueio && "border-destructive/30 bg-destructive/10",
+                      !reserva && !bloqueio && "hover:border-primary/40",
+                    )}
+                    aria-label={`Dia ${format(dia, "dd/MM/yyyy")}`}
+                  >
+                    <span className="text-xs font-semibold tabular-nums">{format(dia, "d")}</span>
+                    {reserva && (
+                      <span className="line-clamp-2 text-[11px] leading-tight font-medium text-primary">
+                        {reserva.clienteNome}
+                      </span>
+                    )}
+                    {bloqueio && (
+                      <span className="text-[11px] leading-tight font-medium text-destructive">
+                        {MOTIVOS_BLOQUEIO[bloqueio.motivo]}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
         </CardContent>
       </Card>
 
@@ -209,8 +250,13 @@ function PaginaAgenda() {
               />
             ) : (
               <ul className="divide-y">
-                {bloqueios.map((bloqueio) => (
-                  <li key={bloqueio.id} className="flex items-center justify-between gap-3 py-3">
+                {bloqueios.map((bloqueio, indice) => (
+                  <ItemLista
+                    key={bloqueio.id}
+                    indice={indice}
+                    elemento="li"
+                    className="flex items-center justify-between gap-3 py-3"
+                  >
                     <div>
                       <p className="text-sm font-medium">{formatarData(bloqueio.data)}</p>
                       <p className="text-xs text-muted-foreground">
@@ -226,7 +272,7 @@ function PaginaAgenda() {
                     >
                       <Trash2 className="size-4 text-destructive" aria-hidden />
                     </Button>
-                  </li>
+                  </ItemLista>
                 ))}
               </ul>
             )}
@@ -246,8 +292,13 @@ function PaginaAgenda() {
               />
             ) : (
               <ul className="divide-y">
-                {listaEspera.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-3 py-3">
+                {listaEspera.map((item, indice) => (
+                  <ItemLista
+                    key={item.id}
+                    indice={indice}
+                    elemento="li"
+                    className="flex items-center justify-between gap-3 py-3"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{item.clienteNome}</p>
                       <p className="text-xs text-muted-foreground">
@@ -257,11 +308,15 @@ function PaginaAgenda() {
                     {item.atendido ? (
                       <AppBadge tom="success">Atendido</AppBadge>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => atenderEspera.mutate(item.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => atenderEspera.mutate(item.id)}
+                      >
                         Marcar atendido
                       </Button>
                     )}
-                  </li>
+                  </ItemLista>
                 ))}
               </ul>
             )}
@@ -281,8 +336,13 @@ function PaginaAgenda() {
             {[...mapaReservas.values()]
               .filter((reserva) => reserva.data.startsWith(format(referencia, "yyyy-MM")))
               .sort((a, b) => a.data.localeCompare(b.data))
-              .map((reserva) => (
-                <li key={reserva.id} className="flex items-center justify-between gap-3 py-3">
+              .map((reserva, indice) => (
+                <ItemLista
+                  key={reserva.id}
+                  indice={indice}
+                  elemento="li"
+                  className="flex items-center justify-between gap-3 py-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{reserva.clienteNome}</p>
                     <p className="text-xs text-muted-foreground">
@@ -292,7 +352,7 @@ function PaginaAgenda() {
                   <span className="text-sm font-semibold tabular-nums">
                     {formatarMoeda(reserva.valor)}
                   </span>
-                </li>
+                </ItemLista>
               ))}
           </ul>
         </CardContent>

@@ -1,14 +1,21 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AnimarNumero } from "@/components/app/MotionUI";
+import { staggerItemIndice, quieto } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { formatarPercentual } from "@/utils/formatadores";
 
 interface AppStatCardProps {
   titulo: string;
+  /** Valor formatado estático (usado sozinho ou como fallback SSR). */
   valor: string;
+  /** Valor numérico: quando informado, o número transiciona com contagem incremental. */
+  valorNumerico?: number;
+  /** Formatador aplicado ao valor numérico animado (ex.: formatarMoeda). */
+  formato?: (n: number) => string;
   icone: LucideIcon;
   descricao?: string;
   dica?: string;
@@ -20,6 +27,8 @@ interface AppStatCardProps {
 export function AppStatCard({
   titulo,
   valor,
+  valorNumerico,
+  formato,
   icone: Icone,
   descricao,
   dica,
@@ -27,12 +36,14 @@ export function AppStatCard({
   aoClicar,
   indice = 0,
 }: AppStatCardProps) {
+  const reduzir = useReducedMotion();
   const positiva = (variacao ?? 0) >= 0;
   const conteudo = (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: indice * 0.05, ease: [0.2, 0.8, 0.2, 1] }}
+      custom={indice}
+      variants={reduzir ? quieto.staggerItem : staggerItemIndice}
+      initial="initial"
+      animate="animate"
       className={cn(
         "group card-hover relative overflow-hidden rounded-2xl border bg-card p-5 shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
@@ -55,7 +66,11 @@ export function AppStatCard({
         </span>
       </div>
       <p className="font-display relative mt-3 text-[1.75rem] font-bold tracking-tight tabular-nums">
-        {valor}
+        {typeof valorNumerico === "number" ? (
+          <AnimarNumero valor={valorNumerico} formato={formato} />
+        ) : (
+          valor
+        )}
       </p>
 
       <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">

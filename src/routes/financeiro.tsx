@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownCircle, ArrowUpCircle, Plus, Trash2, Wallet } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Loader2, Plus, Trash2, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -7,6 +7,7 @@ import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { ListaSkeleton } from "@/components/app/AppLoading";
 import { AppStatCard } from "@/components/app/AppStatCard";
+import { ItemLista, TransicaoEstado } from "@/components/app/MotionUI";
 import { CampoMoeda } from "@/components/app/CamposMascarados";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,6 @@ import { DespesaService } from "@/services/DespesaService";
 import { LogService } from "@/services/LogService";
 import type { CategoriaDespesa, Despesa } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
-
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({
@@ -103,8 +103,10 @@ function PaginaFinanceiro() {
     () => receitas.filter((m) => m.data.startsWith(mes)),
     [receitas, mes],
   );
-  const despesasMes = useMemo(() => despesas.filter((d) => d.data.startsWith(mes)), [despesas, mes]);
-
+  const despesasMes = useMemo(
+    () => despesas.filter((d) => d.data.startsWith(mes)),
+    [despesas, mes],
+  );
 
   const totalReceitas = receitasMes.reduce((total, m) => total + m.valor, 0);
   const totalDespesas = despesasMes.reduce((total, d) => total + d.valor, 0);
@@ -114,7 +116,10 @@ function PaginaFinanceiro() {
       if (!descricao.trim()) throw new Error("Informe a descrição da despesa.");
       if (valor <= 0) throw new Error("Informe um valor maior que zero.");
       const autor = admin?.uid ?? "sistema";
-      const id = await DespesaService.criar({ categoria, descricao: descricao.trim(), valor, data }, autor);
+      const id = await DespesaService.criar(
+        { categoria, descricao: descricao.trim(), valor, data },
+        autor,
+      );
       await LogService.registrar({
         usuario: autor,
         usuarioNome: admin?.nome ?? "Sistema",
@@ -210,8 +215,6 @@ function PaginaFinanceiro() {
 
       <LembretesPagamento />
 
-
-
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
@@ -219,70 +222,88 @@ function PaginaFinanceiro() {
         </TabsList>
       </Tabs>
 
-      {isLoading ? (
-        <ListaSkeleton />
-      ) : aba === "receitas" ? (
-        receitasMes.length === 0 ? (
+      <TransicaoEstado
+        estado={
+          isLoading
+            ? "carregando"
+            : aba === "receitas"
+              ? receitasMes.length === 0
+                ? "vazio"
+                : "pronto"
+              : despesasMes.length === 0
+                ? "vazio"
+                : "pronto"
+        }
+      >
+        {isLoading ? (
+          <ListaSkeleton />
+        ) : aba === "receitas" ? (
+          receitasMes.length === 0 ? (
+            <AppEmptyState
+              icone={ArrowUpCircle}
+              titulo="Nenhuma receita no período"
+              descricao="As receitas são geradas automaticamente ao registrar pagamentos de reservas."
+            />
+          ) : (
+            <div className="space-y-2">
+              {receitasMes.map((movimento, indice) => (
+                <ItemLista key={movimento.id} indice={indice}>
+                  <Card>
+                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{movimento.descricao}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarData(movimento.data)} · {movimento.categoria}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-success tabular-nums">
+                        +{formatarMoeda(movimento.valor)}
+                      </span>
+                    </CardContent>
+                  </Card>
+                </ItemLista>
+              ))}
+            </div>
+          )
+        ) : despesasMes.length === 0 ? (
           <AppEmptyState
-            icone={ArrowUpCircle}
-            titulo="Nenhuma receita no período"
-            descricao="As receitas são geradas automaticamente ao registrar pagamentos de reservas."
+            icone={ArrowDownCircle}
+            titulo="Nenhuma despesa no período"
+            descricao="Registre gastos com água, energia, limpeza e manutenção para acompanhar o saldo."
+            acao={{ label: "Nova despesa", aoClicar: () => setFormAberto(true) }}
           />
         ) : (
           <div className="space-y-2">
-            {receitasMes.map((movimento) => (
-              <Card key={movimento.id}>
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{movimento.descricao}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatarData(movimento.data)} · {movimento.categoria}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-success tabular-nums">
-                    +{formatarMoeda(movimento.valor)}
-                  </span>
-                </CardContent>
-              </Card>
+            {despesasMes.map((despesa, indice) => (
+              <ItemLista key={despesa.id} indice={indice}>
+                <Card>
+                  <CardContent className="flex items-center justify-between gap-4 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{despesa.descricao}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatarData(despesa.data)} · {CATEGORIAS_DESPESA[despesa.categoria]}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-destructive tabular-nums">
+                        −{formatarMoeda(despesa.valor)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Excluir despesa"
+                        onClick={() => setParaExcluir(despesa)}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ItemLista>
             ))}
           </div>
-        )
-      ) : despesasMes.length === 0 ? (
-        <AppEmptyState
-          icone={ArrowDownCircle}
-          titulo="Nenhuma despesa no período"
-          descricao="Registre gastos com água, energia, limpeza e manutenção para acompanhar o saldo."
-          acao={{ label: "Nova despesa", aoClicar: () => setFormAberto(true) }}
-        />
-      ) : (
-        <div className="space-y-2">
-          {despesasMes.map((despesa) => (
-            <Card key={despesa.id}>
-              <CardContent className="flex items-center justify-between gap-4 p-4">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{despesa.descricao}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatarData(despesa.data)} · {CATEGORIAS_DESPESA[despesa.categoria]}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-destructive tabular-nums">
-                    −{formatarMoeda(despesa.valor)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Excluir despesa"
-                    onClick={() => setParaExcluir(despesa)}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        )}
+      </TransicaoEstado>
 
       <Dialog open={formAberto} onOpenChange={setFormAberto}>
         <DialogContent>
@@ -338,8 +359,12 @@ function PaginaFinanceiro() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormAberto(false)}>
               Cancelar
-            </Button>
-            <Button onClick={() => salvarDespesa.mutate(undefined as never)} disabled={salvarDespesa.isPending}>
+            </Button>{" "}
+            <Button
+              onClick={() => salvarDespesa.mutate(undefined as never)}
+              disabled={salvarDespesa.isPending}
+            >
+              {salvarDespesa.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               Salvar despesa
             </Button>
           </DialogFooter>
