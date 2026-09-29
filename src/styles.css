@@ -520,3 +520,16 @@ html {
     animation: none;
   }
 }
+
+/* ---- Reservas: microinterações ---- */
+.dia-calendario { transition: background-color .15s ease, color .15s ease, transform .15s ease; }
+.dia-calendario:not(:disabled):active { transform: scale(.94); }
+.dia-selecionado, .opcao-selecionada { animation: selecionar .25s cubic-bezier(.2,.8,.2,1); }
+@keyframes selecionar { 0% { transform: scale(.94); } 100% { transform: scale(1); } }
+.sucesso-icone { animation: selecionar .35s cubic-bezier(.2,.8,.2,1); }
+.sucesso-check { stroke-dasharray: 24; stroke-dashoffset: 24; animation: tracar .45s .15s ease-out forwards; }
+@keyframes tracar { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .dia-selecionado, .opcao-selecionada, .sucesso-icone { animation: none; }
+  .sucesso-check { animation: none; stroke-dashoffset: 0; }
+}
