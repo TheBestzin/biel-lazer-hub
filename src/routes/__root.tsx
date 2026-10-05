@@ -18,7 +18,6 @@ import { AuthProvider } from "@/app/providers/AuthProvider";
 import { ThemeProvider } from "@/app/providers/ThemeProvider";
 import { AuthGate } from "@/components/app/AuthGate";
 import { TelaCarregamento } from "@/components/app/AppLoading";
-import { SplashScreen } from "@/components/app/SplashScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
@@ -126,7 +125,6 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <SplashScreen />
         {children}
         <Scripts />
       </body>
