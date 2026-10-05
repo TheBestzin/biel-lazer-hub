@@ -533,3 +533,10 @@ html {
   .dia-selecionado, .opcao-selecionada, .sucesso-icone { animation: none; }
   .sucesso-check { animation: none; stroke-dashoffset: 0; }
 }
+@keyframes logo-entrada {
+  0% { opacity: 0; transform: scale(0.4) rotate(-25deg); }
+  60% { opacity: 1; transform: scale(1.12) rotate(6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.logo-entrada { animation: logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .logo-entrada { animation: none; } }
