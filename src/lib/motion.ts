@@ -106,6 +106,31 @@ export const pagina: Variants = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Reveal ao scroll — seções da página pública                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Reveal ao scroll (whileInView): container orquestrando filhos
+ * `staggerItem` em cascata quando a seção entra na viewport.
+ *
+ *   <motion.div variants={revelarContainer} initial="initial" whileInView="animate" viewport={{ once: true, margin: "-60px" }}>
+ *     <motion.div variants={staggerItem} />
+ *   </motion.div>
+ */
+export const revelarContainer: Variants = {
+  initial: {},
+  whileInView: {
+    transition: { staggerChildren: 0.07, delayChildren: 0.02 },
+  },
+};
+
+/** Item do container `revelarContainer` — mesmo par `quieto.*` vale aqui. */
+export const revelarItem: Variants = {
+  initial: { opacity: 0, y: 18 },
+  whileInView: { opacity: 1, y: 0, transition: transicao.media },
+};
+
+/* ------------------------------------------------------------------ */
 /* Cascata (stagger)                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -228,5 +253,13 @@ export const quieto = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
+  },
+  revelarContainer: {
+    initial: {},
+    whileInView: { transition: { staggerChildren: 0 } },
+  },
+  revelarItem: {
+    initial: { opacity: 0 },
+    whileInView: { opacity: 1 },
   },
 } satisfies Record<string, Variants>;

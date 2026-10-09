@@ -35,7 +35,11 @@ export function ListaSkeleton({ linhas = 6 }: { linhas?: number }) {
       aria-busy
     >
       {Array.from({ length: linhas }).map((_, indice) => (
-        <div key={indice} className="flex items-center gap-3 rounded-xl border bg-card p-4">
+        <div
+          key={indice}
+          className="flex items-center gap-3 rounded-xl border bg-card p-4"
+          style={{ animationDelay: `${indice * 60}ms` }}
+        >
           <Skeleton className="size-10 shrink-0 rounded-xl" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-1/3" />
@@ -51,7 +55,18 @@ export function CardsSkeleton({ quantidade = 4 }: { quantidade?: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {Array.from({ length: quantidade }).map((_, indice) => (
-        <Skeleton key={indice} className="h-32 rounded-2xl" />
+        <div
+          key={indice}
+          className="rounded-2xl border bg-card p-5 shadow-elegant"
+          style={{ animationDelay: `${indice * 60}ms` }}
+        >
+          <div className="flex items-start justify-between">
+            <Skeleton className="size-10 rounded-xl" />
+            <Skeleton className="h-4 w-14 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-7 w-2/3" />
+          <Skeleton className="mt-2 h-3.5 w-1/2" />
+        </div>
       ))}
     </div>
   );

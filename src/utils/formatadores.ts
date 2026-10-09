@@ -55,3 +55,28 @@ export function variacaoPercentual(atual: number, anterior: number): number | nu
   if (!anterior) return null;
   return ((atual - anterior) / anterior) * 100;
 }
+
+/**
+ * Data relativa em PT-BR: "agora", "há 5 min", "há 3 h",
+ * "ontem", "há 4 dias" — acima de 7 dias cai para dd/MM/yyyy.
+ */
+export function formatarDataRelativa(valor: string | Date | undefined): string {
+  const data = paraData(valor);
+  if (!data) return "—";
+
+  const agora = new Date();
+  const diferencaMs = agora.getTime() - data.getTime();
+  const minutos = Math.floor(diferencaMs / 60_000);
+
+  if (minutos < 1) return "agora";
+  if (minutos < 60) return `há ${minutos} min`;
+
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `há ${horas} h`;
+
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return "ontem";
+  if (dias <= 7) return `há ${dias} dias`;
+
+  return formatarData(data);
+}

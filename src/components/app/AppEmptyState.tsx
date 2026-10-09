@@ -26,12 +26,17 @@ export function AppEmptyState({
       variants={reduzir ? quieto.fadeInUp : fadeInUp}
       initial="initial"
       animate="animate"
-      className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-card/50 px-6 py-14 text-center"
+      className="relative flex flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-dashed bg-card/50 px-6 py-14 text-center"
     >
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+      {/* Brilho decorativo sutil no fundo — mesmo padrão dos stat cards. */}
+      <span
+        className="pointer-events-none absolute -top-16 size-40 rounded-full brand-gradient opacity-[0.07] blur-2xl"
+        aria-hidden
+      />
+      <span className="relative flex size-14 items-center justify-center rounded-2xl bg-primary-soft text-primary">
         <Icone className="size-6" aria-hidden />
       </span>
-      <div className="space-y-1">
+      <div className="relative space-y-1">
         <p className="text-base font-semibold">{titulo}</p>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">{descricao}</p>
       </div>

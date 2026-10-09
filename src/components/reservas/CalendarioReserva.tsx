@@ -68,7 +68,7 @@ export function CalendarioReserva({
         <Button
           variant="outline"
           size="icon"
-          className="rounded-full"
+          className="size-11 rounded-full"
           aria-label="Mês anterior"
           onClick={() => aoMudarMes(addMonths(mes, -1))}
         >
@@ -91,7 +91,7 @@ export function CalendarioReserva({
         <Button
           variant="outline"
           size="icon"
-          className="rounded-full"
+          className="size-11 rounded-full"
           aria-label="Próximo mês"
           onClick={() => aoMudarMes(addMonths(mes, 1))}
         >
@@ -100,7 +100,7 @@ export function CalendarioReserva({
       </div>
 
       {/* Dias da semana */}
-      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[0.65rem] font-semibold tracking-[0.14em] text-muted-foreground uppercase sm:text-xs">
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[0.8rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase sm:text-sm">
         {DIAS.map((dia) => (
           <span key={dia} className="py-1">
             {dia}
@@ -138,11 +138,13 @@ export function CalendarioReserva({
                 }${isSelecionado ? " (selecionada)" : ""}`}
                 aria-pressed={isSelecionado}
                 className={cn(
-                  "relative flex aspect-square items-center justify-center rounded-xl border text-sm font-semibold tabular-nums transition-colors duration-200 sm:rounded-2xl",
+                  "relative flex aspect-square items-center justify-center rounded-xl border text-[0.95rem] font-semibold tabular-nums transition-colors duration-200 sm:rounded-2xl sm:text-base",
                   foraDoMes && "opacity-30",
-                  desabilitado
-                    ? "cursor-not-allowed border-transparent bg-muted/50 text-muted-foreground/60 line-through decoration-1"
-                    : "cursor-pointer border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary-soft",
+                  ocupado
+                    ? "cursor-not-allowed border-transparent hachura-ocupado text-foreground/55"
+                    : desabilitado
+                      ? "cursor-not-allowed border-transparent bg-muted/50 text-muted-foreground/60"
+                      : "cursor-pointer border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary-soft",
                   !desabilitado && !isSelecionado && "focus-visible:ring-2 focus-visible:ring-ring",
                   isSelecionado &&
                     "border-transparent bg-primary text-primary-foreground shadow-glow",
@@ -172,18 +174,15 @@ export function CalendarioReserva({
       {/* Legenda */}
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span
-            className="size-2.5 rounded-full border border-primary/40 bg-primary-soft"
-            aria-hidden
-          />
+          <span className="size-3 rounded border border-primary/40 bg-primary-soft" aria-hidden />
           Disponível
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-muted" aria-hidden />
+          <span className="size-3 rounded hachura-ocupado" aria-hidden />
           Ocupado
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-primary" aria-hidden />
+          <span className="size-3 rounded bg-primary" aria-hidden />
           Selecionado
         </span>
         <span className="ml-auto font-medium">

@@ -3,9 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { CalendarCheck, CalendarPlus, CircleAlert, TrendingUp, Users, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip as ChartTooltip,
   XAxis,
@@ -44,6 +45,10 @@ export const Route = createFileRoute("/")({
 
 function mesDe(data: string): string {
   return data.slice(0, 7);
+}
+
+function diasNoMesAnoCorrente(mes: string): number {
+  return new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate();
 }
 
 function Dashboard() {
@@ -136,16 +141,8 @@ function Dashboard() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <AppStatCard
+              className="sm:col-span-2 border-primary/30 bg-gradient-to-br from-primary-soft/60 to-card"
               indice={0}
-              titulo="Reservas do mês"
-              valor={String(resumo.reservasMes)}
-              valorNumerico={resumo.reservasMes}
-              icone={CalendarCheck}
-              variacao={resumo.variacaoReservas}
-              descricao="vs. mês anterior"
-            />
-            <AppStatCard
-              indice={1}
               titulo="Faturamento"
               valor={formatarMoeda(resumo.receitaMes)}
               valorNumerico={resumo.receitaMes}
@@ -153,6 +150,15 @@ function Dashboard() {
               icone={Wallet}
               variacao={resumo.variacaoReceita}
               descricao="recebido no mês"
+            />
+            <AppStatCard
+              indice={1}
+              titulo="Reservas do mês"
+              valor={String(resumo.reservasMes)}
+              valorNumerico={resumo.reservasMes}
+              icone={CalendarCheck}
+              variacao={resumo.variacaoReservas}
+              descricao="vs. mês anterior"
             />
             <AppStatCard
               indice={2}
@@ -170,7 +176,7 @@ function Dashboard() {
               valorNumerico={resumo.ocupacao}
               formato={(n) => `${Math.round(n)}%`}
               icone={Users}
-              descricao={`${clientes.length} clientes cadastrados`}
+              descricao={`${resumo.reservasMes} reserva${resumo.reservasMes === 1 ? "" : "s"} em ${diasNoMesAnoCorrente(mesAtual)} dias`}
               dica="Reservas do mês dividido pelo total de dias."
             />
           </div>
@@ -180,21 +186,11 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-base">Receitas e despesas (6 meses)</CardTitle>
+            <CardTitle className="text-base">Receitas e despesas · últimos 6 meses</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={serie} margin={{ left: -12, right: 8, top: 8 }}>
-                <defs>
-                  <linearGradient id="grad-receita" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="grad-despesa" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--destructive)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <BarChart data={serie} margin={{ left: -12, right: 8, top: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="mes"
@@ -209,6 +205,7 @@ function Dashboard() {
                   axisLine={false}
                 />
                 <ChartTooltip
+                  cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                   contentStyle={{
                     background: "var(--card)",
                     border: "1px solid var(--border)",
@@ -217,23 +214,26 @@ function Dashboard() {
                   }}
                   formatter={(valor: number) => formatarMoeda(valor)}
                 />
-                <Area
-                  type="monotone"
+                <Legend
+                  iconType="circle"
+                  iconSize={10}
+                  wrapperStyle={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}
+                />
+                <Bar
                   dataKey="receita"
                   name="Receita"
-                  stroke="var(--primary)"
-                  fill="url(#grad-receita)"
-                  strokeWidth={2}
+                  fill="var(--primary)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={28}
                 />
-                <Area
-                  type="monotone"
+                <Bar
                   dataKey="despesa"
                   name="Despesa"
-                  stroke="var(--destructive)"
-                  fill="url(#grad-despesa)"
-                  strokeWidth={2}
+                  fill="var(--destructive)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={28}
                 />
-              </AreaChart>
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -262,15 +262,29 @@ function Dashboard() {
                 <ul className="space-y-2">
                   {resumo.proximas.map((reserva, indice) => (
                     <ItemLista key={reserva.id} indice={indice}>
-                      <li className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors duration-150 hover:border-primary/40">
-                        <div className="min-w-0">
+                      <li className="flex items-center gap-3 rounded-xl border p-3 transition-colors duration-150 hover:border-primary/40">
+                        <div
+                          className="flex w-12 shrink-0 flex-col items-center rounded-lg bg-primary-soft py-1.5 text-primary"
+                          aria-label={formatarData(reserva.data)}
+                        >
+                          <span className="text-lg leading-none font-bold tabular-nums lining-nums">
+                            {reserva.data.slice(8, 10)}
+                          </span>
+                          <span className="mt-0.5 text-[0.65rem] font-bold tracking-wider uppercase">
+                            {reserva.data.slice(5, 7)}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{reserva.clienteNome}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida}
+                            {reserva.entrada}–{reserva.saida}
                           </p>
+                          <div className="mt-1">
+                            <BadgeStatusReserva status={reserva.statusReserva} />
+                          </div>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
-                          <span className="text-sm font-semibold tabular-nums">
+                          <span className="text-sm font-semibold tabular-nums lining-nums">
                             {formatarMoeda(reserva.valor)}
                           </span>
                           <BadgeStatusPagamento status={reserva.statusPagamento} />

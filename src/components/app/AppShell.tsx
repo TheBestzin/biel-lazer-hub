@@ -8,7 +8,9 @@ import { fadeIn, pagina, quieto, springFisica } from "@/lib/motion";
 
 import { AppLogoCompleta } from "@/components/app/AppLogo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NAVEGACAO } from "@/constants/navegacao";
+import { SinoNotificacoes } from "@/components/app/SinoNotificacoes";
+import { PaletaComandos } from "@/components/app/PaletaComandos";
+import { GRUPOS_NAVEGACAO } from "@/constants/navegacao";
 import { CARGOS } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useTema } from "@/app/providers/ThemeProvider";
@@ -22,39 +24,46 @@ import { iniciais } from "@/utils/formatadores";
 function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
   return (
-    <nav className="space-y-1" aria-label="Navegação principal">
-      {NAVEGACAO.map((item) => {
-        const ativo = item.para === "/" ? caminho === "/" : caminho.startsWith(item.para);
-        return (
-          <Link
-            key={item.para}
-            to={item.para}
-            onClick={aoNavegar}
-            className={cn(
-              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-              ativo
-                ? "bg-primary-soft text-primary shadow-soft"
-                : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full brand-gradient transition-opacity",
-                ativo ? "opacity-100" : "opacity-0",
-              )}
-              aria-hidden
-            />
-            <item.icone
-              className={cn(
-                "size-4.5 shrink-0 transition-transform duration-200",
-                !ativo && "group-hover:scale-110",
-              )}
-              aria-hidden
-            />
-            <span className="truncate">{item.label}</span>
-          </Link>
-        );
-      })}
+    <nav className="space-y-5" aria-label="Navegação principal">
+      {GRUPOS_NAVEGACAO.map((grupo) => (
+        <div key={grupo.rotulo} className="space-y-1">
+          <p className="px-3 pb-1 text-[0.65rem] font-bold tracking-[0.18em] text-muted-foreground/70 uppercase">
+            {grupo.rotulo}
+          </p>
+          {grupo.itens.map((item) => {
+            const ativo = item.para === "/" ? caminho === "/" : caminho.startsWith(item.para);
+            return (
+              <Link
+                key={item.para}
+                to={item.para}
+                onClick={aoNavegar}
+                className={cn(
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  ativo
+                    ? "bg-primary-soft text-primary shadow-soft"
+                    : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full brand-gradient transition-opacity",
+                    ativo ? "opacity-100" : "opacity-0",
+                  )}
+                  aria-hidden
+                />
+                <item.icone
+                  className={cn(
+                    "size-4.5 shrink-0 transition-transform duration-200",
+                    !ativo && "group-hover:scale-110",
+                  )}
+                  aria-hidden
+                />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -71,7 +80,9 @@ function PerfilRodape() {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-sm font-medium">{admin?.nome}</p>
+          <p className="text-sm font-medium break-words" title={admin?.nome}>
+            {admin?.nome}
+          </p>
           <p className="truncate text-xs text-muted-foreground">
             {admin ? CARGOS[admin.cargo] : ""}
           </p>
@@ -166,7 +177,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="lg:hidden">
             <AppLogoCompleta compacto />
           </div>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1.5">
+            <PaletaComandos />
+            <SinoNotificacoes />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

@@ -14,7 +14,6 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
 
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -69,12 +68,17 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-acc-down: acc-down 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-acc-up: acc-up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+
   --shadow-soft: 0 1px 2px oklch(0.2 0.03 240 / 0.04), 0 2px 8px oklch(0.2 0.03 240 / 0.06);
   --shadow-card: 0 1px 3px oklch(0.2 0.03 240 / 0.06), 0 8px 24px -12px oklch(0.2 0.03 240 / 0.14);
+  --shadow-elevated:
+    0 2px 6px oklch(0.2 0.03 240 / 0.06), 0 16px 44px -16px oklch(0.2 0.03 240 / 0.2);
   --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);
   --shadow-glow: 0 18px 48px -18px color-mix(in oklab, var(--primary) 55%, transparent);
 }
-
 
 :root {
   --radius: 0.875rem;
@@ -141,13 +145,24 @@
     transparent 42%
   );
   --gradient-mesh:
-    radial-gradient(60% 55% at 12% 0%, color-mix(in oklab, var(--primary) 20%, transparent), transparent 70%),
-    radial-gradient(55% 50% at 92% 8%, color-mix(in oklab, var(--info) 16%, transparent), transparent 70%),
-    radial-gradient(70% 60% at 50% 100%, color-mix(in oklab, var(--nature) 10%, transparent), transparent 75%);
+    radial-gradient(
+      60% 55% at 12% 0%,
+      color-mix(in oklab, var(--primary) 20%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 92% 8%,
+      color-mix(in oklab, var(--info) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 100%,
+      color-mix(in oklab, var(--nature) 10%, transparent),
+      transparent 75%
+    );
   --glass-bg: color-mix(in oklab, var(--card) 74%, transparent);
   --glass-border: color-mix(in oklab, var(--primary) 18%, transparent);
 }
-
 
 .dark {
   /* Deep Pool (escuro) */
@@ -212,14 +227,24 @@
     transparent 42%
   );
   --gradient-mesh:
-    radial-gradient(60% 55% at 12% 0%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%),
-    radial-gradient(55% 50% at 92% 8%, color-mix(in oklab, oklch(0.868 0.16 178.2) 12%, transparent), transparent 70%),
-    radial-gradient(70% 60% at 50% 100%, color-mix(in oklab, var(--info) 12%, transparent), transparent 75%);
+    radial-gradient(
+      60% 55% at 12% 0%,
+      color-mix(in oklab, var(--primary) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 92% 8%,
+      color-mix(in oklab, oklch(0.868 0.16 178.2) 12%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 100%,
+      color-mix(in oklab, var(--info) 12%, transparent),
+      transparent 75%
+    );
   --glass-bg: color-mix(in oklab, var(--card) 66%, transparent);
   --glass-border: color-mix(in oklab, var(--primary) 22%, transparent);
 }
-
-
 
 @layer base {
   * {
@@ -302,6 +327,71 @@
   }
 }
 
+/* ---- Seções públicas (vitrine /reservar) ---- */
+
+@utility card-glass {
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+@utility section-titulo {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* Brilho pulsante suave para CTAs de conversão. */
+@utility cta-pulse {
+  animation: brilho-cta 2.8s ease-in-out infinite;
+}
+
+@keyframes brilho-cta {
+  0%,
+  100% {
+    box-shadow: 0 18px 48px -18px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 18px 48px -14px color-mix(in oklab, var(--primary) 75%, transparent),
+      0 0 0 6px color-mix(in oklab, var(--primary) 12%, transparent);
+  }
+}
+
+/* Formas decorativas flutuando lentamente no hero. */
+@utility flutuar-lento {
+  animation: flutuar-lento 7s ease-in-out infinite;
+}
+
+@keyframes flutuar-lento {
+  0%,
+  100% {
+    transform: translateY(-6px);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+/* Barra de CTA fixa no mobile — respeita a área segura do aparelho. */
+.cta-barra-mobile {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .cta-barra-mobile {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulse,
+  .flutuar-lento {
+    animation: none;
+  }
+}
+
 /* ---- Microinterações da reserva ---- */
 
 @utility card-elevate {
@@ -377,6 +467,25 @@
   }
 }
 
+/* Acordeão (Radix) — abre/fecha com a altura real do conteúdo. */
+@keyframes acc-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes acc-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -428,7 +537,12 @@ html {
   width: 240px;
   height: 240px;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgba(0, 217, 255, 0.35), rgba(0, 245, 212, 0.12) 45%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(0, 217, 255, 0.35),
+    rgba(0, 245, 212, 0.12) 45%,
+    transparent 70%
+  );
   filter: blur(6px);
   animation: splash-pulse 2.6s ease-in-out infinite;
 }
@@ -522,16 +636,66 @@ html {
 }
 
 /* ---- Reservas: microinterações ---- */
-.dia-calendario { transition: background-color .15s ease, color .15s ease, transform .15s ease; }
-.dia-calendario:not(:disabled):active { transform: scale(.94); }
-.dia-selecionado, .opcao-selecionada { animation: selecionar .25s cubic-bezier(.2,.8,.2,1); }
-@keyframes selecionar { 0% { transform: scale(.94); } 100% { transform: scale(1); } }
-.sucesso-icone { animation: selecionar .35s cubic-bezier(.2,.8,.2,1); }
-.sucesso-check { stroke-dasharray: 24; stroke-dashoffset: 24; animation: tracar .45s .15s ease-out forwards; }
-@keyframes tracar { to { stroke-dashoffset: 0; } }
+
+/* Dia ocupado no calendário: hachura diagonal distinta de "desabilitado".
+   Usa muted-foreground (≥4.5:1 sobre bg-card) para contraste sem carregar o grid. */
+@utility hachura-ocupado {
+  background-color: color-mix(in oklab, var(--color-muted) 55%, transparent);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px,
+    color-mix(in oklab, var(--color-muted-foreground) 45%, transparent) 4px 6px
+  );
+}
+
+/* Números de dados: sempre lining + tabular (dashboard admin). */
+@utility lining-nums {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.dia-calendario {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+.dia-calendario:not(:disabled):active {
+  transform: scale(0.94);
+}
+.dia-selecionado,
+.opcao-selecionada {
+  animation: selecionar 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes selecionar {
+  0% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.sucesso-icone {
+  animation: selecionar 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sucesso-check {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: tracar 0.45s 0.15s ease-out forwards;
+}
+@keyframes tracar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .dia-selecionado, .opcao-selecionada, .sucesso-icone { animation: none; }
-  .sucesso-check { animation: none; stroke-dashoffset: 0; }
+  .dia-selecionado,
+  .opcao-selecionada,
+  .sucesso-icone {
+    animation: none;
+  }
+  .sucesso-check {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
 @keyframes logo-entrada {
   0% { opacity: 0; transform: scale(0.4) rotate(-25deg); }

@@ -22,6 +22,7 @@ interface AppStatCardProps {
   variacao?: number | null;
   aoClicar?: () => void;
   indice?: number;
+  className?: string;
 }
 
 export function AppStatCard({
@@ -35,6 +36,7 @@ export function AppStatCard({
   variacao,
   aoClicar,
   indice = 0,
+  className,
 }: AppStatCardProps) {
   const reduzir = useReducedMotion();
   const positiva = (variacao ?? 0) >= 0;
@@ -47,6 +49,7 @@ export function AppStatCard({
       className={cn(
         "group card-hover relative overflow-hidden rounded-2xl border bg-card p-5 shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
+        className,
       )}
       onClick={aoClicar}
       role={aoClicar ? "button" : undefined}
@@ -65,7 +68,7 @@ export function AppStatCard({
           <Icone className="size-4.5" aria-hidden />
         </span>
       </div>
-      <p className="font-display relative mt-3 text-[1.75rem] font-bold tracking-tight tabular-nums">
+      <p className="font-display relative mt-3 text-[1.75rem] font-bold tracking-tight lining-nums tabular-nums">
         {typeof valorNumerico === "number" ? (
           <AnimarNumero valor={valorNumerico} formato={formato} />
         ) : (

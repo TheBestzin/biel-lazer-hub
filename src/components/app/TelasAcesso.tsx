@@ -18,17 +18,31 @@ import { APP_SUBTITULO } from "@/constants";
 function Moldura({ children }: { children: React.ReactNode }) {
   const reduzir = useReducedMotion();
   return (
-    <div className="surface-gradient flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="surface-gradient relative flex min-h-screen items-center justify-center px-4 py-10">
+      {/* Brilhos decorativos — mesma linguagem visual do site público. */}
+      <div
+        className="pointer-events-none absolute -top-32 left-1/2 size-96 -translate-x-1/2 rounded-full brand-gradient opacity-10 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 mesh-gradient opacity-50"
+        aria-hidden
+      />
       <motion.div
         variants={reduzir ? quieto.fadeInUp : fadeInUp}
         initial="initial"
         animate="animate"
-        className="w-full max-w-md rounded-3xl border bg-card p-8 shadow-elevated"
+        className="glass-panel relative w-full max-w-md rounded-3xl p-8 shadow-elevated"
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          <AppLogo tamanho={56} />
+          <AppLogo
+            tamanho={56}
+            className="drop-shadow-[0_8px_24px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+          />
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Área de Lazer Biel</h1>
+            <h1 className="font-display text-xl font-semibold tracking-tight">
+              Área de Lazer Biel
+            </h1>
             <p className="text-sm text-muted-foreground">{APP_SUBTITULO}</p>
           </div>
         </div>
@@ -134,7 +148,7 @@ export function TelaLogin() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full" disabled={enviando}>
+        <Button type="submit" className="tap-press w-full shadow-glow" disabled={enviando}>
           {enviando && <Loader2 className="size-4 animate-spin" aria-hidden />}
           Entrar
         </Button>
@@ -227,7 +241,7 @@ export function TelaPrimeiroAcesso() {
             placeholder="Mínimo de 6 caracteres"
           />
         </div>
-        <Button type="submit" className="w-full" disabled={enviando}>
+        <Button type="submit" className="tap-press w-full shadow-glow" disabled={enviando}>
           {enviando && <Loader2 className="size-4 animate-spin" aria-hidden />}
           Criar administrador master
         </Button>
