@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { recuperarSenha, registrar } from "@/firebase/auth";
+import { recuperarSenha } from "@/firebase/auth";
 import { variaveisFirebaseFaltando } from "@/firebase/config";
-import { AdminService } from "@/services/AdminService";
 import { APP_SUBTITULO } from "@/constants";
 
 function Moldura({ children }: { children: React.ReactNode }) {
@@ -171,81 +170,9 @@ export function TelaLogin() {
   );
 }
 
-export function TelaPrimeiroAcesso() {
-  const { revalidar, entrarComEmail } = useAuth();
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [enviando, setEnviando] = useState(false);
-
-  async function submeter(evento: React.FormEvent) {
-    evento.preventDefault();
-    if (senha.length < 6) {
-      toast.error("A senha deve ter ao menos 6 caracteres.");
-      return;
-    }
-    setEnviando(true);
-    try {
-      const credencial = await registrar(email.trim(), senha);
-      await AdminService.criar(
-        { uid: credencial.user.uid, nome: nome.trim(), email: email.trim(), cargo: "master" },
-        credencial.user.uid,
-      );
-      await revalidar();
-      await entrarComEmail(email.trim(), senha);
-      toast.success("Administrador master criado com sucesso!");
-    } catch (erro) {
-      toast.error(
-        erro instanceof Error ? erro.message : "Não foi possível concluir a configuração inicial.",
-      );
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <Moldura>
-      <div className="mb-5 rounded-xl bg-primary-soft p-3 text-center text-sm text-primary">
-        Nenhum administrador cadastrado. Crie a conta master para começar.
-      </div>
-      <form className="space-y-4" onSubmit={submeter}>
-        <div className="space-y-2">
-          <Label htmlFor="nome-master">Nome completo</Label>
-          <Input
-            id="nome-master"
-            required
-            value={nome}
-            onChange={(evento) => setNome(evento.target.value)}
-            placeholder="Gabriel Souza"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email-master">E-mail</Label>
-          <Input
-            id="email-master"
-            type="email"
-            required
-            value={email}
-            onChange={(evento) => setEmail(evento.target.value)}
-            placeholder="voce@exemplo.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="senha-master">Senha</Label>
-          <Input
-            id="senha-master"
-            type="password"
-            required
-            value={senha}
-            onChange={(evento) => setSenha(evento.target.value)}
-            placeholder="Mínimo de 6 caracteres"
-          />
-        </div>
-        <Button type="submit" className="tap-press w-full shadow-glow" disabled={enviando}>
-          {enviando && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          Criar administrador master
-        </Button>
-      </form>
-    </Moldura>
-  );
-}
+/**
+ * A criação do primeiro administrador agora é feita INFORME FORA DO SITE:
+ *   scripts/set-admin.mjs (Firebase Admin SDK + service account).
+ * Antes, qualquer visitante podia virar admin master enquanto a coleção
+ * admins estivesse vazia — o registro agora exige o claim do token.
+ */

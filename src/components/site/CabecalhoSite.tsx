@@ -75,9 +75,6 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
               </a>
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="rounded-full" asChild>
-            <a href="/?login=1">Área do admin</a>
-          </Button>
           <Button
             variant="ghost"
             size="icon"

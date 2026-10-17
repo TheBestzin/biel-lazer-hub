@@ -18,6 +18,7 @@ import {
 
 import { CampoTelefone } from "@/components/app/CamposMascarados";
 import { CalendarioReserva } from "@/components/reservas/CalendarioReserva";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -262,6 +263,8 @@ export function EtapaDados({
   aoMudarObservacoes,
   errosCampo,
   tentouEnviar,
+  armadilha,
+  aoMudarArmadilha,
 }: {
   nome: string;
   aoMudarNome: (valor: string) => void;
@@ -273,6 +276,8 @@ export function EtapaDados({
   aoMudarObservacoes: (valor: string) => void;
   errosCampo: { nome?: string; telefone?: string };
   tentouEnviar: boolean;
+  armadilha: string;
+  aoMudarArmadilha: (valor: string) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -367,6 +372,20 @@ export function EtapaDados({
           placeholder="Tipo de evento, horário de chegada, etc."
         />
       </div>
+
+      {/* Honeypot: invisível para humanos e ignorado por tab. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+        <label htmlFor="publico-website">Website</label>
+        <input
+          id="publico-website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={armadilha}
+          onChange={(evento) => aoMudarArmadilha(evento.target.value)}
+        />
+      </div>
     </div>
   );
 }
@@ -387,6 +406,8 @@ export function EtapaConfirmacao({
   valor,
   enviando,
   erro,
+  aceiteLGPD,
+  aoMudarAceiteLGPD,
   aoVoltar,
   aoConfirmar,
 }: {
@@ -401,6 +422,8 @@ export function EtapaConfirmacao({
   valor: number;
   enviando: boolean;
   erro: string | null;
+  aceiteLGPD: boolean;
+  aoMudarAceiteLGPD: (valor: boolean) => void;
   aoVoltar: () => void;
   aoConfirmar: () => void;
 }) {
@@ -444,9 +467,27 @@ export function EtapaConfirmacao({
         ))}
       </div>
 
+      {/* Consentimento LGPD — uma única finalidade: contato para a reserva. */}
+      <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/40 p-4">
+        <Checkbox
+          id="publico-lgpd"
+          checked={aceiteLGPD}
+          onCheckedChange={(marcado) => aoMudarAceiteLGPD(marcado === true)}
+          className="mt-0.5"
+          aria-describedby="publico-lgpd-nota"
+        />
+        <label htmlFor="publico-lgpd" className="cursor-pointer text-sm text-muted-foreground">
+          Autorizo o uso do meu nome e WhatsApp <strong className="text-foreground">apenas</strong>{" "}
+          para contato sobre esta reserva (LGPD). Não pedimos CPF neste formulário.
+          <span id="publico-lgpd-nota" className="sr-only">
+            Selecione esta caixa para poder enviar a reserva.
+          </span>
+        </label>
+      </div>
+
       {erro && (
         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
-          <Alert variant="destructive" className="rounded-2xl">
+          <Alert variant="destructive" className="rounded-2xl" role="alert" aria-live="assertive">
             <AlertDescription>{erro}</AlertDescription>
           </Alert>
         </motion.div>
@@ -461,7 +502,7 @@ export function EtapaConfirmacao({
           size="lg"
           className="tap-press shadow-glow"
           onClick={aoConfirmar}
-          disabled={enviando || !data}
+          disabled={enviando || !data || !aceiteLGPD}
         >
           {enviando ? (
             <>
@@ -488,6 +529,7 @@ export function TelaSucesso({
   data,
   nome,
   convidados,
+  protocolo,
   entrada,
   saida,
   whatsapp,
@@ -496,6 +538,7 @@ export function TelaSucesso({
   data: string;
   nome: string;
   convidados: number;
+  protocolo: string | null;
   entrada: string;
   saida: string;
   whatsapp: string;
@@ -518,10 +561,20 @@ export function TelaSucesso({
         <PartyPopper className="size-9 text-success" aria-hidden />
       </motion.div>
 
-      <h2 className="font-display mt-6 text-3xl font-bold sm:text-4xl">Reserva realizada!</h2>
-      <p className="mt-2 text-muted-foreground">
-        Tudo pronto, {nome.split(" ")[0]}. Em breve entraremos em contato pelo WhatsApp para
-        combinar os detalhes do pagamento.
+      <h2 className="font-display mt-6 text-3xl font-bold sm:text-4xl">Solicitação enviada!</h2>
+      <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-warning/15 px-4 py-1.5 text-sm font-semibold text-warning">
+        <Loader2 className="size-4" aria-hidden />
+        Aguardando confirmação
+      </div>
+      <p className="mt-3 text-muted-foreground">
+        Recebemos seu pedido, {nome.split(" ")[0]}.{" "}
+        {protocolo && (
+          <strong className="text-foreground">
+            Solicitação nº {protocolo.slice(0, 6).toUpperCase()} —{" "}
+          </strong>
+        )}
+        <strong className="text-foreground">sua data só fica garantida após o pagamento.</strong> Em
+        breve confirmaremos pelo WhatsApp.
       </p>
 
       <div className="mt-8 space-y-3 rounded-2xl border border-border/70 bg-background/40 p-5 text-left">

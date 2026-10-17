@@ -4,14 +4,10 @@ import { Navigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { AppShell } from "@/components/app/AppShell";
 import { TelaCarregamento } from "@/components/app/AppLoading";
-import {
-  TelaFirebasePendente,
-  TelaLogin,
-  TelaPrimeiroAcesso,
-} from "@/components/app/TelasAcesso";
+import { TelaFirebasePendente, TelaLogin } from "@/components/app/TelasAcesso";
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { carregando, configurado, admin, precisaConfiguracaoInicial } = useAuth();
+  const { carregando, configurado, admin } = useAuth();
   const rota = useRouterState({ select: (estado) => estado.location.pathname });
   const busca = useRouterState({ select: (estado) => estado.location.searchStr });
 
@@ -20,7 +16,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (!configurado) return <TelaFirebasePendente />;
   if (carregando) return <TelaCarregamento />;
-  if (precisaConfiguracaoInicial) return <TelaPrimeiroAcesso />;
 
   // Visitantes que abrem o site caem direto na página pública de datas.
   if (!admin && rota === "/" && !busca.includes("login")) {
@@ -30,4 +25,3 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!admin) return <TelaLogin />;
   return <AppShell>{children}</AppShell>;
 }
-

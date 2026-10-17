@@ -1,10 +1,5 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import {
-  getAuth,
-  browserLocalPersistence,
-  setPersistence,
-  type Auth,
-} from "firebase/auth";
+import { getAuth, browserLocalPersistence, setPersistence, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
@@ -34,7 +29,6 @@ const config = {
   measurementId:
     (import.meta.env["VITE_FIREBASE_MEASUREMENT_ID"] as string | undefined) ?? padrao.measurementId,
 };
-
 
 export const firebaseConfigurado = Boolean(config.apiKey && config.projectId && config.appId);
 
@@ -94,4 +88,26 @@ export function getDb(): Firestore {
 export function getFirebaseStorage(): FirebaseStorage {
   if (!storageRef) storageRef = getStorage(iniciar());
   return storageRef;
+}
+
+/**
+ * App Check (reCAPTCHA Enterprise) — ativado somente quando a chave de
+ * site existir em VITE_RECAPTCHA_ENTERPRISE_KEY (defina na Vercel).
+ * Import dinâmico: quem não configurou não paga o custo do bundle.
+ *
+ * Passos no console: Firebase → App Check → Apps → Web → reCAPTCHA
+ * Enterprise → cole a chave de site do Google Cloud (reCAPTCHA Enterprise).
+ */
+export async function ativarAppCheck(): Promise<void> {
+  const chave = import.meta.env["VITE_RECAPTCHA_ENTERPRISE_KEY"] as string | undefined;
+  if (!chave || !firebaseConfigurado) return;
+  try {
+    const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await import("firebase/app-check");
+    initializeAppCheck(iniciar(), {
+      provider: new ReCaptchaEnterpriseProvider(chave),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (erro) {
+    console.warn("App Check não foi ativado:", erro);
+  }
 }

@@ -31,6 +31,16 @@ export const COLECOES = {
   notificacoes: "notificacoes",
   logs: "logs",
   lixeira: "lixeira",
+  /**
+   * Calendário público do site: documento por data (ID = yyyy-MM-dd),
+   * sem dado pessoal. Escrita pelo admin ao aprovar reserva ou bloquear.
+   */
+  datasOcupadas: "datas_ocupadas",
+  /**
+   * Solicitações criadas pelo formulário público — superfície única de
+   * write anônimo, validada por regras no servidor.
+   */
+  solicitacoes: "solicitacoes",
 } as const;
 
 export type NomeColecao = (typeof COLECOES)[keyof typeof COLECOES];

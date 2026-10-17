@@ -32,13 +32,17 @@ import {
 import { EtapasReserva } from "@/components/reservas/EtapasReserva";
 import { ResumoReserva, ResumoReservaCompacto } from "@/components/reservas/ResumoReserva";
 import { Button } from "@/components/ui/button";
+import { DatasOcupadasService, SolicitacoesService } from "@/services/SolicitacoesService";
+// Fluxo de migração (transitório): enquanto as novas regras não estão
+// aplicadas no Firebase, o envio cai para o caminho antigo para não
+// derrubar o site. Remover junto com `firestore.rules` em produção.
 import { BloqueioService } from "@/services/AgendaService";
 import { ClienteService } from "@/services/ClienteService";
 import { ConfiguracaoService } from "@/services/ConfiguracaoService";
 import { NotificacaoService } from "@/services/NotificacaoService";
 import { ReservaService } from "@/services/ReservaService";
 import { formatarData } from "@/utils/formatadores";
-import { validarTelefone } from "@/utils/documentos";
+import { apenasDigitos, validarTelefone } from "@/utils/documentos";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/reservar")({
@@ -54,6 +58,37 @@ export const Route = createFileRoute("/reservar")({
   }),
   component: PaginaReservarPublica,
 });
+
+/** Limite de envio por navegador: 3 solicitações a cada 10 minutos. */
+function registrarEnvio(): string | null {
+  try {
+    const CHAVE = "solicitacoes-envios";
+    const JANELA_MS = 10 * 60 * 1000;
+    const LIMITE = 3;
+    const agora = Date.now();
+    const anteriores: number[] = JSON.parse(localStorage.getItem(CHAVE) ?? "[]") as number[];
+    const dentro = anteriores.filter((t) => agora - t < JANELA_MS);
+    if (dentro.length >= LIMITE) {
+      return "Muitas solicitações em pouco tempo. Tente novamente em alguns minutos ou fale com a gente pelo WhatsApp.";
+    }
+    dentro.push(agora);
+    localStorage.setItem(CHAVE, JSON.stringify(dentro));
+    return null;
+  } catch {
+    // Sem localStorage disponível: não bloqueia o envio legítimo.
+    return null;
+  }
+}
+
+/** True quando o erro veio das regras do Firestore (permission-denied). */
+function erroDePermissao(erro: unknown): boolean {
+  const rec = erro as { code?: string; message?: string };
+  return (
+    rec?.code === "permission-denied" ||
+    rec?.message?.includes("permission-denied") === true ||
+    rec?.message?.includes("Missing or insufficient permissions") === true
+  );
+}
 
 function PaginaReservarPublica() {
   const [mes, setMes] = useState(() => {
@@ -74,10 +109,14 @@ function PaginaReservarPublica() {
   const [erro, setErro] = useState<string | null>(null);
   const [errosCampo, setErrosCampo] = useState<{ nome?: string; telefone?: string }>({});
   const [tentouEnviar, setTentouEnviar] = useState(false);
+  const [aceiteLGPD, setAceiteLGPD] = useState(false);
+  // Honeypot: campo invisível para humanos; robôs preenchem.
+  const [armadilha, setArmadilha] = useState("");
   const [concluido, setConcluido] = useState<{
     data: string;
     nome: string;
     convidados: number;
+    protocolo: string | null;
   } | null>(null);
 
   // Força o visual escuro na página pública, sem alterar preferências salvas.
@@ -90,19 +129,30 @@ function PaginaReservarPublica() {
     };
   }, []);
 
+  // O público só lê a coleção sem dado pessoal (`datas_ocupadas`).
   const {
-    data: reservas = [],
-    refetch: recarregarReservas,
-    isLoading: carregandoReservas,
+    data: mapaDatas,
+    refetch: recarregarDatas,
+    isLoading: carregandoDatas,
   } = useQuery({
+    queryKey: ["publico", "datasOcupadas"],
+    queryFn: () => DatasOcupadasService.listar(),
+    staleTime: 30_000,
+    // Durante a migração, se as regras novas ainda não estiverem no
+    // console, cai para a leitura antiga (reservas + bloqueios).
+    retry: false,
+  });
+  const { data: reservas = [], isLoading: carregandoReservas } = useQuery({
     queryKey: ["publico", "reservas"],
     queryFn: () => ReservaService.listar(),
     staleTime: 30_000,
+    enabled: mapaDatas === undefined,
   });
   const { data: bloqueios = [], isLoading: carregandoBloqueios } = useQuery({
     queryKey: ["publico", "bloqueios"],
     queryFn: () => BloqueioService.listar(),
     staleTime: 30_000,
+    enabled: mapaDatas === undefined,
   });
   const { data: configuracoes } = useQuery({
     queryKey: ["publico", "configuracoes"],
@@ -111,13 +161,14 @@ function PaginaReservarPublica() {
   });
 
   const ocupadas = useMemo(() => {
-    const mapa = new Set<string>();
+    if (mapaDatas) return new Set(mapaDatas.keys());
+    const legado = new Set<string>();
     reservas
       .filter((r) => !r.deleted && r.statusReserva !== "cancelada")
-      .forEach((r) => mapa.add(r.data));
-    bloqueios.filter((b) => !b.deleted).forEach((b) => mapa.add(b.data));
-    return mapa;
-  }, [reservas, bloqueios]);
+      .forEach((r) => legado.add(r.data));
+    bloqueios.filter((b) => !b.deleted).forEach((b) => legado.add(b.data));
+    return legado;
+  }, [mapaDatas, reservas, bloqueios]);
 
   const hoje = useMemo(() => {
     const d = new Date();
@@ -125,80 +176,127 @@ function PaginaReservarPublica() {
     return d;
   }, []);
 
+  /** Caminho legado de migração — encapsula o fluxo antigo.
+   *  Remover junto com o fallback quando as regras estiverem em produção.
+   */
+  const caminhoLegado = async (): Promise<{ data: string; protocolo: string | null }> => {
+    const atualizadas = await ReservaService.listar();
+    const bloqueiosAtuais = await BloqueioService.listar();
+    const indisponivel =
+      atualizadas.some(
+        (r) => !r.deleted && r.statusReserva !== "cancelada" && r.data === dataEscolhida,
+      ) || bloqueiosAtuais.some((b) => !b.deleted && b.data === dataEscolhida);
+    if (indisponivel) throw new Error("Esta data acabou de ser reservada. Escolha outra.");
+
+    let cliente = await ClienteService.porTelefone(telefone);
+    if (!cliente && dataEscolhida) {
+      const id = await ClienteService.criar(
+        {
+          nome: nome.trim(),
+          cpf: "",
+          telefone: apenasDigitos(telefone),
+          status: "confiavel",
+          observacoes: "Cadastro feito pelo site.",
+          tags: ["Site"],
+          favorito: false,
+        },
+        "site",
+      );
+      cliente = await ClienteService.obter(id);
+    }
+    if (!cliente) throw new Error("Não foi possível registrar seus dados. Tente novamente.");
+    if (cliente.status === "nao_alugar") {
+      throw new Error("Não foi possível concluir a reserva. Entre em contato pelo WhatsApp.");
+    }
+
+    const anotacoes = [`Convidados: ${convidados}`, observacoes.trim()].filter(Boolean).join(" · ");
+
+    if (!dataEscolhida) throw new Error("Escolha uma data disponível no calendário.");
+    await ReservaService.criar(
+      {
+        clienteId: cliente.id,
+        data: dataEscolhida,
+        entrada: configuracoes?.entradaPadrao ?? "08:00",
+        saida: configuracoes?.saidaPadrao ?? "22:00",
+        valor: configuracoes?.valorPadrao ?? 0,
+        valorPago: 0,
+        statusPagamento: "pendente",
+        observacoes: anotacoes,
+      },
+      cliente,
+      "site",
+    );
+    await NotificacaoService.criar(
+      {
+        titulo: "Nova reserva pelo site",
+        descricao: `${cliente.nome} — ${formatarData(dataEscolhida)}`,
+        tipo: "reserva",
+      },
+      "site",
+    );
+    return { data: dataEscolhida, protocolo: null };
+  };
+
   const enviar = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{ data: string; protocolo: string | null }> => {
       if (!dataEscolhida) throw new Error("Escolha uma data disponível no calendário.");
       if (nome.trim().length < 3) throw new Error("Informe seu nome completo.");
       if (!validarTelefone(telefone)) throw new Error("Informe um telefone válido com DDD.");
-
-      const atualizadas = await ReservaService.listar();
-      const bloqueiosAtuais = await BloqueioService.listar();
-      const indisponivel =
-        atualizadas.some(
-          (r) => !r.deleted && r.statusReserva !== "cancelada" && r.data === dataEscolhida,
-        ) || bloqueiosAtuais.some((b) => !b.deleted && b.data === dataEscolhida);
-      if (indisponivel) throw new Error("Esta data acabou de ser reservada. Escolha outra.");
-
-      let cliente = await ClienteService.porTelefone(telefone);
-      if (!cliente) {
-        const id = await ClienteService.criar(
-          {
-            nome: nome.trim(),
-            cpf: "",
-            telefone,
-            status: "confiavel",
-            observacoes: "Cadastro feito pelo site.",
-            tags: ["Site"],
-            favorito: false,
-          },
-          "site",
-        );
-        cliente = await ClienteService.obter(id);
-      }
-      if (!cliente) throw new Error("Não foi possível registrar seus dados. Tente novamente.");
-      if (cliente.status === "nao_alugar") {
-        throw new Error("Não foi possível concluir a reserva. Entre em contato pelo WhatsApp.");
+      if (!aceiteLGPD) {
+        throw new Error("Confirme o consentimento do uso dos dados para continuar.");
       }
 
-      const anotacoes = [`Convidados: ${convidados}`, observacoes.trim()]
-        .filter(Boolean)
-        .join(" · ");
+      // Honeypot: robô preenche o campo invisível. Respondemos como
+      // sucesso sem gravar nada, para não revelar a armadilha.
+      if (armadilha.trim()) {
+        return { data: dataEscolhida, protocolo: null };
+      }
 
-      await ReservaService.criar(
-        {
-          clienteId: cliente.id,
+      // Limite de envio por navegador: 3 solicitações / 10 minutos.
+      const bloqueioEnvio = registrarEnvio();
+      if (bloqueioEnvio) throw new Error(bloqueioEnvio);
+
+      // Reconfirma a disponibilidade com a fonte pública mais fresca.
+      const mapaAtual = await DatasOcupadasService.listar();
+      const ocupacao = mapaAtual.get(dataEscolhida);
+      if (ocupacao === "reservada" || ocupacao === "bloqueada") {
+        throw new Error("Esta data acabou de ser reservada. Escolha outra.");
+      }
+
+      try {
+        // Caminho novo: uma solicitação validada no servidor. Sem
+        // escrever em clientes, reservas ou notificações por aqui.
+        const protocolo = await SolicitacoesService.criar({
+          nome: nome.trim(),
+          telefone,
           data: dataEscolhida,
-          entrada: configuracoes?.entradaPadrao ?? "08:00",
-          saida: configuracoes?.saidaPadrao ?? "22:00",
-          valor: configuracoes?.valorPadrao ?? 0,
-          valorPago: 0,
-          statusPagamento: "pendente",
-          observacoes: anotacoes,
-        },
-        cliente,
-        "site",
-      );
-      await NotificacaoService.criar(
-        {
-          titulo: "Nova reserva pelo site",
-          descricao: `${cliente.nome} — ${formatarData(dataEscolhida)}`,
-          tipo: "reserva",
-        },
-        "site",
-      );
-      return dataEscolhida;
+          convidados,
+          observacoes: [`Convidados: ${convidados}`, observacoes.trim()]
+            .filter(Boolean)
+            .join(" · "),
+        });
+        return { data: dataEscolhida, protocolo };
+      } catch (falha) {
+        // Migração transitória: enquanto as regras novas não estão
+        // aplicadas no console, solicitações são recusadas e usamos o
+        // caminho legado. Remover quando `firestore.rules` estiver no ar.
+        if (!erroDePermissao(falha)) throw falha;
+        return caminhoLegado();
+      }
     },
-    onSuccess: (data) => {
-      setConcluido({ data, nome: nome.trim(), convidados });
+    onSuccess: ({ data, protocolo }) => {
+      setConcluido({ data, nome: nome.trim(), convidados, protocolo });
       setErro(null);
       setErrosCampo({});
+      setTentouEnviar(false);
       setDataEscolhida(null);
       setNome("");
       setTelefone("");
       setConvidados(10);
       setObservacoes("");
-      void recarregarReservas();
-      toast.success("Reserva registrada!");
+      setAceiteLGPD(false);
+      void recarregarDatas();
+      toast.success("Solicitação enviada!");
     },
     onError: (e: unknown) => {
       setErro(e instanceof Error ? e.message : "Não foi possível concluir a reserva.");
@@ -209,7 +307,7 @@ function PaginaReservarPublica() {
   const entrada = configuracoes?.entradaPadrao ?? "08:00";
   const saida = configuracoes?.saidaPadrao ?? "18:00";
   const precoDiaria = configuracoes?.valorPadrao ?? 0;
-  const carregandoAgenda = carregandoReservas || carregandoBloqueios;
+  const carregandoAgenda = mapaDatas ? carregandoDatas : carregandoReservas || carregandoBloqueios;
 
   const periodos = [
     { chave: "manha" as const, ...PERIODO_MANHA },
@@ -261,6 +359,8 @@ function PaginaReservarPublica() {
     setConcluido(null);
     setErro(null);
     setTentouEnviar(false);
+    setArmadilha("");
+    setAceiteLGPD(false);
     setErrosCampo({});
     setDataEscolhida(null);
     setPeriodo("tarde");
@@ -296,6 +396,7 @@ function PaginaReservarPublica() {
               data={concluido.data}
               nome={concluido.nome}
               convidados={concluido.convidados}
+              protocolo={concluido.protocolo}
               entrada={entrada}
               saida={saida}
               whatsapp={whatsapp}
@@ -360,6 +461,8 @@ function PaginaReservarPublica() {
                           aoMudarObservacoes={setObservacoes}
                           errosCampo={errosCampo}
                           tentouEnviar={tentouEnviar}
+                          armadilha={armadilha}
+                          aoMudarArmadilha={setArmadilha}
                         />
                       )}
                       {etapa === 3 && (
@@ -375,6 +478,8 @@ function PaginaReservarPublica() {
                           valor={precoDiaria}
                           enviando={enviar.isPending}
                           erro={erro}
+                          aceiteLGPD={aceiteLGPD}
+                          aoMudarAceiteLGPD={setAceiteLGPD}
                           aoVoltar={voltarEtapa}
                           aoConfirmar={() => {
                             setTentouEnviar(true);

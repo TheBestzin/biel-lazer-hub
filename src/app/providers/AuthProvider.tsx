@@ -1,6 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
-import { firebaseConfigurado } from "@/firebase/config";
+import { ativarAppCheck, firebaseConfigurado } from "@/firebase/config";
 import { entrar, observarSessao, sair, usuarioAtual, type User } from "@/firebase/auth";
 import { AdminService } from "@/services/AdminService";
 import { LogService } from "@/services/LogService";
@@ -10,7 +18,6 @@ interface EstadoAuth {
   carregando: boolean;
   usuario: User | null;
   admin: Admin | null;
-  precisaConfiguracaoInicial: boolean;
   configurado: boolean;
   entrarComEmail: (email: string, senha: string) => Promise<void>;
   encerrarSessao: () => Promise<void>;
@@ -23,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [carregando, setCarregando] = useState(true);
   const [usuario, setUsuario] = useState<User | null>(null);
   const [admin, setAdmin] = useState<Admin | null>(null);
-  const [existeAdmin, setExisteAdmin] = useState(true);
 
   const carregarContexto = useCallback(async (user: User | null) => {
     if (!firebaseConfigurado) {
@@ -31,11 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const algum = await AdminService.existeAlgum();
-      setExisteAdmin(algum);
       if (user) {
-        const registro = await AdminService.obterPorUid(user.uid);
-        setAdmin(registro);
+        // A permissão vem do claim no token (aplicado por
+        // scripts/set-admin.mjs com a service account) — nunca de
+        // uma leitura de coleção no cliente.
+        const token = await user.getIdTokenResult();
+        if (token.claims["admin"] === true) {
+          const registro = await AdminService.obterPorUid(user.uid);
+          setAdmin(registro);
+        } else {
+          setAdmin(null);
+        }
       } else {
         setAdmin(null);
       }
@@ -51,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCarregando(false);
       return;
     }
+    void ativarAppCheck();
     return observarSessao((user) => {
       setUsuario(user);
       void carregarContexto(user);
@@ -59,6 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const entrarComEmail = useCallback(async (email: string, senha: string) => {
     const credencial = await entrar(email, senha);
+    // Claim fresco no token emitido no login — sem claims, sem acesso.
+    const token = await credencial.user.getIdTokenResult();
+    if (token.claims["admin"] !== true) {
+      await sair();
+      throw new Error("Este usuário não possui acesso administrativo ao sistema.");
+    }
     const registro = await AdminService.obterPorUid(credencial.user.uid);
     if (!registro || !registro.ativo) {
       await sair();
@@ -99,13 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       carregando,
       usuario,
       admin,
-      precisaConfiguracaoInicial: !existeAdmin,
       configurado: firebaseConfigurado,
       entrarComEmail,
       encerrarSessao,
       revalidar,
     }),
-    [carregando, usuario, admin, existeAdmin, entrarComEmail, encerrarSessao, revalidar],
+    [carregando, usuario, admin, entrarComEmail, encerrarSessao, revalidar],
   );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
