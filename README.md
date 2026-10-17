@@ -1,5 +1,75 @@
 # Biel Reservations
 
+> **Nota (2026):** a especificação abaixo descreve um sistema só interno.
+> Hoje o projeto também tem **site público de reservas** (`/reservar`),
+> com regras de segurança que separam o anônimo do admin (ver seção
+> "Segurança" logo abaixo). A especificação permanece como referência
+> para os módulos internos do administrador.
+
+## Segurança (Fase 0) — passos manuais
+
+O sistema já **negar tudo por padrão** (`firestore.rules`). A única
+superfície pública é a leitura de `datas_ocupadas` (sem dado pessoal) e a
+criação de `solicitacoes` validada no servidor. Acesso do admin exige o
+**claim `admin: true`** no token — concedido por script, nunca pela UI.
+
+### 1. Dar acesso de administrador (uma vez por pessoa)
+
+1. Baixe uma service account: Firebase Console → Configurações do
+   projeto → Contas de serviço → **Gerar nova chave privada**.
+   Guarde o JSON **FORA do repositório** (o repo é público).
+2. No terminal (o usuário precisa existir no Firebase Auth):
+
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=/caminho/fora/do/repo/conta.json \
+     node scripts/set-admin.mjs email@dominio.com --cargo master
+   ```
+
+3. Verificar: rode o mesmo comando com `--verificar email@dominio.com`.
+   O usuário precisa **sair e entrar** de novo no sistema.
+
+A tela pública "crie a conta master" foi removida — ninguém vira admin
+acessando o site.
+
+### 2. Aplicar as regras (após o deploy do front)
+
+```bash
+npm i -g firebase-tools
+firebase login
+firebase deploy --only firestore:rules,firestore:indexes
+firebase deploy --only storage
+```
+
+A ordem importa: primeiro o novo front (Vercel), depois as regras. Enquanto
+as regras antigas estiverem no ar, o site usa o caminho de migração.
+
+### 3. App Check (reCAPTCHA Enterprise)
+
+1. Google Cloud Console → API & Services → reCAPTCHA Enterprise → crie a
+   chave de site.
+2. Firebase Console → App Check → Apps → Web → registre com reCAPTCHA
+   Enterprise.
+3. Na Vercel, defina `VITE_RECAPTCHA_ENTERPRISE_KEY` com a chave de site.
+   O cliente ativa o App Check automaticamente quando a variável existe.
+
+### 4. Testes das regras (emulador)
+
+Requer **Java 11+** (o emulador do Firestore é um binário Java):
+
+```bash
+npm run test:rules
+```
+
+### 5. Equivários úteis
+
+- `firestore.rules` — regras vigentes (negar-tudo + validação pública).
+- `storage.rules` — Storage fechado; `comprovantes/` só admin (Fase 3).
+- `vercel.json` — CSP, `X-Content-Type-Options`, `Referrer-Policy`,
+  `frame-ancestors` e Permissions-Policy.
+- `.env.example` — variáveis necessárias (chaves e App Check).
+
+---
+
 PARTE 1 — ESPECIFICAÇÃO GERAL DO PROJETO
 
 Área de Lazer Biel
