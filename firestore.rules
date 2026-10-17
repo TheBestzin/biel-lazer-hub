@@ -1,0 +1,149 @@
+rules_version = '2';
+
+// ────────────────────────────────────────────────────────────────
+// Área de Lazer Biel — Regras do Firestore
+//
+// Princípio: negar tudo por padrão. A única superfície pública é a
+// leitura de `datas_ocupadas` (sem dado pessoal) e a criação de
+// `solicitacoes` com campos validados. Tudo o mais exige o claim
+// `admin == true`, aplicado pelo script scripts/set-admin.mjs.
+//
+// Painel do administrador: apenas o próprio registro admit do admin.
+// Logs: apenas create, nunca update/delete, e sempre em nome do
+// próprio usuário autenticado (uid == request.auth.uid).
+//
+// Aplicar com:  firebase deploy --only firestore:rules,firestore:indexes
+// (após o deploy do front no Vercel — ver README, seção "Segurança").
+// ────────────────────────────────────────────────────────────────
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Verifica-se no token (claim), não pelo documento — o cliente
+    // nunca deveria conseguir emitir o próprio poder da sua versão.
+    function eAdmin() {
+      return request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // Validação de campos aceitos na criação da solicitação do visitante.
+    function nomeValido() {
+      return request.resource.data.nome is string
+        && request.resource.data.nome.size() >= 3
+        && request.resource.data.nome.size() <= 120
+        && request.resource.data.nome.matches(
+             "^[A-Za-zÀ-ÖØ-öø-ÿ0-9][A-Za-zÀ-ÖØ-öø-ÿ0-9 .,\\-]{2,119}$");
+    }
+
+    // Telefone é armazenado só com dígitos (DDD + número): 10 ou 11.
+    function telefoneValido() {
+      return request.resource.data.telefone is string
+        && request.resource.data.telefone.matches("^([0-9]{10}|[0-9]{11})$");
+    }
+
+    function dataValida() {
+      return request.resource.data.data is string
+        && request.resource.data.data.matches("^2[0-9]{3}-[0-9]{2}-[0-9]{2}$");
+    }
+
+    function convidadosValidos() {
+      return request.resource.data.convidados is int
+        && request.resource.data.convidados >= 1
+        && request.resource.data.convidados <= 200; // limite fixo do servidor
+    }
+
+    // Data nunca pode já estar ocupada — o ID do documento em
+    // datas_ocupadas é a data (yyyy-MM-dd), o que impede duas reservas.
+    function dataEstaLivre() {
+      return !exists(/databases/$(database)/documents/datas_ocupadas/$(request.resource.data.data));
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Coleções administrativas — somente admin.
+    match /reservas/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /clientes/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /financeiro/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /despesas/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /bloqueios/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /lista_espera/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /notificacoes/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /lixeira/{id} {
+      allow read, write: if eAdmin();
+    }
+    match /logs/{id} {
+      // Logs só nascem (do próprio usuário autenticado e admin).
+      // Ninguém edita; ninguém apaga (nem mesmo o admin).
+      allow create: if eAdmin()
+        && request.resource.data.usuario == request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             ['usuario', 'usuarioNome', 'acao', 'colecao', 'documento',
+              'descricao', 'antes', 'depois', 'deleted', 'createdBy',
+              'updatedBy', 'createdAt', 'updatedAt']);
+      allow read: if eAdmin();
+      allow update, delete: if false;
+    }
+
+    // O admin lê e escolhe sua coleção de registros de conta.
+    // O próprio usuário admin também pode ler seu registro (login).
+    match /admins/{uid} {
+      allow read: if eAdmin()
+        || (request.auth != null && request.auth.uid == uid);
+      allow create: if false; // criar admins é papel do Admin SDK (set-admin.mjs)
+      allow update: if eAdmin() && resource.id == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Configurações (preço e horários são exibidos no site público,
+    // portanto a leitura daqui alimenta o calendário e a reserva sem exposição).
+    match /configuracoes/{id} {
+      allow read: if true;
+      allow write: if eAdmin();
+    }
+
+    // Calendário público do site. Documentos id = "yyyy-MM-dd",
+    // com apenas {"status": "reservada" | "bloqueada", "updatedAt"}.
+    // Nenhum dado pessoal é tocado aqui.
+    match /datas_ocupadas/{data} {
+      allow get, list: if true;
+      allow create: if eAdmin()
+        && data.matches("^2[0-9]{3}-[0-9]{2}-[0-9]{2}$")
+        && request.resource.data.keys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.status in ['reservada', 'bloqueada'];
+      allow update: if eAdmin()
+        && request.resource.data.keys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.status in ['reservada', 'bloqueada'];
+      allow delete: if eAdmin();
+    }
+
+    // Solicitação feita pelo visitante (formulário público).
+    // createdAt usa documentSentinel (serverTimestamp), nunca dado do cliente.
+    match /solicitacoes/{id} {
+      allow create: if nomeValido()
+        && telefoneValido()
+        && dataValida()
+        && convidadosValidos()
+        && dataEstaLivre()
+        && request.resource.data.observacoes is string
+        && request.resource.data.observacoes.size() <= 500
+        && request.resource.data.keys().hasOnly(
+             ['nome', 'telefone', 'data', 'convidados', 'observacoes']);
+      allow read, update, delete: if eAdmin();
+    }
+  }
+}

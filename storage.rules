@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// Storage: negar tudo por padrão. Hoje ninguém (nem admin) envia arquivo
+// pela tela ainda. Quando a Fase 3 ativar comprovantes de pagamento,
+// somente administradores (claim admin) acessam a pasta `comprovantes/`.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /comprovantes/{arquivo} {
+      allow read, write: if request.auth != null
+        && request.auth.token.admin == true;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
