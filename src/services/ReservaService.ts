@@ -90,7 +90,8 @@ export const ReservaService = {
         ...dados,
         clienteNome: cliente.nome,
         clienteTelefone: apenasDigitos(cliente.telefone),
-        clienteCPF: cliente.cpf ?? "",
+        // LGPD: dados sensíveis (CPF) não são duplicados em reservas —
+        // a localização do cliente guarda tudo; reservas só guarda ID.
         observacoes: dados.observacoes ?? "",
         statusReserva: "reservada" satisfies StatusReserva,
         checklist: checklistInicial(),

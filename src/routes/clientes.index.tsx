@@ -27,7 +27,7 @@ import { chaves, useAcao, useClientes } from "@/hooks/useDados";
 import { ClienteService } from "@/services/ClienteService";
 import { LogService } from "@/services/LogService";
 import type { Cliente } from "@/types";
-import { mascararCPF, mascararTelefone } from "@/utils/documentos";
+import { ofuscarCpf, ofuscarTelefone } from "@/utils/documentos";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
 import { cn } from "@/lib/utils";
 
@@ -175,8 +175,8 @@ function PaginaClientes() {
                         <p className="truncate font-medium hover:text-primary">{cliente.nome}</p>
                         <p className="text-xs text-muted-foreground">
                           {cliente.cpf
-                            ? mascararCPF(cliente.cpf)
-                            : mascararTelefone(cliente.telefone)}
+                            ? ofuscarCpf(cliente.cpf)
+                            : ofuscarTelefone(cliente.telefone)}
                         </p>
                       </Link>{" "}
                       <Tooltip>
@@ -219,7 +219,7 @@ function PaginaClientes() {
                       <div>
                         <dt>Telefone</dt>
                         <dd className="font-medium text-foreground">
-                          {mascararTelefone(cliente.telefone)}
+                          {ofuscarTelefone(cliente.telefone)}
                         </dd>
                       </div>
                       <div>

@@ -121,7 +121,6 @@ export function ReservaFormDialog({
             ...valores,
             clienteNome: clienteSelecionado.nome,
             clienteTelefone: clienteSelecionado.telefone,
-            clienteCPF: clienteSelecionado.cpf ?? "",
           },
           autor,
         );

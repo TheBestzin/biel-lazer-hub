@@ -34,3 +34,17 @@ export function validarTelefone(valor: string): boolean {
   const d = apenasDigitos(valor);
   return d.length === 10 || d.length === 11;
 }
+
+/** Exibição em LISTAS (LGPD): ***.428.424-** — completo só no perfil. */
+export function ofuscarCpf(valor: string): string {
+  const d = apenasDigitos(valor);
+  if (d.length !== 11) return "—";
+  return `***.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+/** Exibição em LISTAS (LGPD): (**) 98***-0012 — completo só no perfil. */
+export function ofuscarTelefone(valor: string): string {
+  const d = apenasDigitos(valor);
+  if (d.length !== 10 && d.length !== 11) return "—";
+  return `(***) ${d.slice(2, 4)}****-${d.slice(-4)}`;
+}

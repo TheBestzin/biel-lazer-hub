@@ -1,5 +1,8 @@
 import { FileText, Printer } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+
+import { ClienteService } from "@/services/ClienteService";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +29,14 @@ interface ContratoDialogProps {
 export function ContratoDialog({ aberto, aoFechar, reserva }: ContratoDialogProps) {
   const { data: configuracoes } = useConfiguracoes();
   const { admin } = useAuth();
+  // LGPD: o CPF não fica duplicado na reserva — o contrato busca
+  // os dados do cliente direto do cadastro dele.
+  const { data: cliente } = useQuery({
+    queryKey: ["cliente", reserva?.clienteId],
+    queryFn: () => ClienteService.obter(reserva!.clienteId),
+    enabled: Boolean(reserva),
+    staleTime: 30_000,
+  });
 
   const texto = useMemo(() => {
     if (!reserva) return "";
@@ -33,7 +44,7 @@ export function ContratoDialog({ aberto, aoFechar, reserva }: ContratoDialogProp
     const substituicoes: Record<string, string> = {
       empresa: configuracoes?.nomeEmpresa ?? "Área de Lazer Biel",
       cliente: reserva.clienteNome,
-      cpf: mascararCPF(reserva.clienteCPF ?? ""),
+      cpf: mascararCPF(cliente?.cpf ?? ""),
       telefone: mascararTelefone(reserva.clienteTelefone),
       data: formatarData(reserva.data),
       entrada: reserva.entrada,
@@ -43,7 +54,7 @@ export function ContratoDialog({ aberto, aoFechar, reserva }: ContratoDialogProp
       administrador: admin?.nome ?? "",
     };
     return modelo.replace(/\{\{(\w+)\}\}/g, (_, chave: string) => substituicoes[chave] ?? "");
-  }, [reserva, configuracoes, admin]);
+  }, [reserva, configuracoes, admin, cliente]);
 
   function imprimir() {
     const janela = window.open("", "_blank", "width=800,height=900");

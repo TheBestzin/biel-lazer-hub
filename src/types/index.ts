@@ -59,7 +59,7 @@ export interface Reserva extends Auditavel {
   clienteId: string;
   clienteNome: string;
   clienteTelefone: string;
-  clienteCPF?: string;
+  /** LGPD: o CPF não é duplicado aqui — dados sensíveis ficam em clientes. */
   /** ISO yyyy-MM-dd */
   data: string;
   entrada: string;
