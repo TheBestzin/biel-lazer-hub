@@ -50,7 +50,12 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClientes, useDespesas, useReservas } from "@/hooks/useDados";
-import { formatarData, formatarMoeda, variacaoPercentual } from "@/utils/formatadores";
+import {
+  formatarData,
+  formatarMoeda,
+  formatarPercentual,
+  variacaoPercentual,
+} from "@/utils/formatadores";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -165,7 +170,10 @@ function Dashboard() {
     const total = anteriores.reduce((soma, valor) => soma + valor, 0);
     return total > 0 ? Math.round(total / anteriores.length) : 0;
   }, [serie]);
-  const progressoMeta = meta > 0 ? Math.min(100, (resumo.receitaMes / meta) * 100) : 0;
+  const progressoMeta = meta > 0 ? (resumo.receitaMes / meta) * 100 : 0;
+  /** Barra limitada a 100% só visualmente; o texto mostra o percentual real. */
+  const barraMeta = Math.min(100, Math.max(0, progressoMeta));
+  const metaSuperada = meta > 0 && resumo.receitaMes >= meta;
 
   /** Tabela de próximas reservas: busca local por cliente/código + filtro. */
   const linhasTabela = useMemo(() => {
@@ -185,8 +193,9 @@ function Dashboard() {
   }, [resumo.proximas, busca, filtro]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
+        variante="limpo"
         titulo={`${saudacaoDoDia()}, ${admin?.nome.split(" ")[0] ?? "equipe"}`}
         descricao="Este é o panorama de hoje: reservas, faturamento e ocupação em um só lugar."
         acoes={
@@ -199,12 +208,14 @@ function Dashboard() {
 
       <TransicaoEstado estado={isLoading ? "carregando" : "pronto"}>
         {isLoading ? (
-          <CardsSkeleton quantidade={6} />
+          <CardsSkeleton quantidade={5} />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          /* Grid único de 12 colunas: destaque (4) + 4 indicadores em 2×2 (8).
+             O gráfico (8) e a meta (4) fecham nas mesmas bordas verticais. */
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-12">
             {/* Card destaque — gradiente azul/ciano da marca */}
             <AppStatCard
-              className="sm:col-span-2"
+              className="xl:col-span-4"
               indice={0}
               destaque
               titulo="Faturamento do mês"
@@ -217,6 +228,7 @@ function Dashboard() {
             />
             <AppStatCard
               indice={1}
+              className="xl:col-span-2"
               titulo="Reservas hoje"
               valor={String(resumo.reservasHoje)}
               valorNumerico={resumo.reservasHoje}
@@ -225,6 +237,7 @@ function Dashboard() {
             />
             <AppStatCard
               indice={2}
+              className="xl:col-span-2"
               titulo="Reservas do mês"
               valor={String(resumo.reservasMes)}
               valorNumerico={resumo.reservasMes}
@@ -234,6 +247,7 @@ function Dashboard() {
             />
             <AppStatCard
               indice={3}
+              className="xl:col-span-2"
               titulo="Clientes ativos"
               valor={String(resumo.clientesAtivos)}
               valorNumerico={resumo.clientesAtivos}
@@ -242,6 +256,7 @@ function Dashboard() {
             />
             <AppStatCard
               indice={4}
+              className="xl:col-span-2"
               titulo="Taxa de ocupação"
               valor={`${resumo.ocupacao}%`}
               valorNumerico={resumo.ocupacao}
@@ -254,8 +269,8 @@ function Dashboard() {
         )}
       </TransicaoEstado>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-5 xl:grid-cols-12">
+        <Card className="rounded-[20px] xl:col-span-8">
           <CardHeader>
             <CardTitle className="text-base">Receitas e despesas · últimos 6 meses</CardTitle>
           </CardHeader>
@@ -292,7 +307,7 @@ function Dashboard() {
                 />
                 <Bar
                   dataKey="receita"
-                  name="Receita"
+                  name="Receitas"
                   fill="var(--primary)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={28}
@@ -300,7 +315,7 @@ function Dashboard() {
                 />
                 <Bar
                   dataKey="despesa"
-                  name="Despesa"
+                  name="Despesas"
                   fill="var(--chart-3)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={28}
@@ -312,10 +327,16 @@ function Dashboard() {
         </Card>
 
         {/* Progresso do mês: receita recebida × média dos meses anteriores */}
-        <Card className="lg:col-span-2">
+        <Card className="rounded-[20px] xl:col-span-4">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Meta de faturamento</CardTitle>
-            <Target className="size-4 text-primary" aria-hidden />
+            {metaSuperada ? (
+              <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
+                Meta superada
+              </span>
+            ) : (
+              <Target className="size-4 text-primary" aria-hidden />
+            )}
           </CardHeader>
           <CardContent className="space-y-5">
             <div>
@@ -327,24 +348,31 @@ function Dashboard() {
                   meta <span className="font-semibold text-foreground">{formatarMoeda(meta)}</span>
                 </p>
               </div>
-              <BarraProgresso
-                className="mt-3"
-                valor={meta > 0 ? progressoMeta : resumo.receitaMes > 0 ? 100 : 0}
-              />
+              <BarraProgresso className="mt-3" valor={meta > 0 ? barraMeta : 0} />
               {meta > 0 ? (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {Math.round(progressoMeta)}% da média dos últimos 5 meses ·{" "}
-                  {resumo.receitaMes >= meta ? (
-                    <span className="font-medium text-success">meta atingida</span>
-                  ) : (
-                    <>
-                      faltam{" "}
-                      <span className="font-medium text-foreground">
-                        {formatarMoeda(meta - resumo.receitaMes)}
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground tabular-nums">
+                      {formatarPercentual(progressoMeta)}
+                    </span>{" "}
+                    da meta
+                    {metaSuperada ? (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · excedeu {formatarMoeda(resumo.receitaMes - meta)}
                       </span>
-                    </>
-                  )}
-                </p>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · faltam {formatarMoeda(meta - resumo.receitaMes)}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Meta = média dos últimos 5 meses
+                    {metaSuperada && " (barra limitada a 100%)"}.
+                  </p>
+                </div>
               ) : (
                 <p className="mt-3 text-xs text-muted-foreground">
                   A meta é calculada com a média dos meses anteriores — registre receitas para
@@ -370,7 +398,7 @@ function Dashboard() {
       </div>
 
       {/* Tabela de próximas reservas — busca local, filtro e ações rápidas */}
-      <Card className="overflow-hidden py-0">
+      <Card className="overflow-hidden rounded-[20px] py-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 p-5">
           <div>
             <h3 className="text-base font-semibold tracking-tight">Próximas reservas</h3>

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppLogo } from "@/components/app/AppLogo";
 import { fadeIn } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 export function AppLoading({ mensagem = "Carregando..." }: { mensagem?: string }) {
   return (
@@ -53,11 +54,15 @@ export function ListaSkeleton({ linhas = 6 }: { linhas?: number }) {
 
 export function CardsSkeleton({ quantidade = 4 }: { quantidade?: number }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-12">
       {Array.from({ length: quantidade }).map((_, indice) => (
         <div
           key={indice}
-          className="rounded-2xl border bg-card p-5 shadow-elegant"
+          className={cn(
+            "rounded-[20px] border bg-card p-5 shadow-elegant",
+            // Mesmo esqueleto do dashboard: destaque (4) + 4 cards em 2×2 (8).
+            indice === 0 ? "sm:col-span-2 xl:col-span-4 xl:row-span-2" : "xl:col-span-4",
+          )}
           style={{ animationDelay: `${indice * 60}ms` }}
         >
           <div className="flex items-start justify-between">

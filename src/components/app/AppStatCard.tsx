@@ -50,9 +50,9 @@ export function AppStatCard({
       initial="initial"
       animate="animate"
       className={cn(
-        "group card-hover relative overflow-hidden rounded-2xl border p-5",
+        "group card-hover relative overflow-hidden rounded-[20px] border p-5",
         destaque
-          ? "border-white/10 shadow-glow brand-gradient text-primary-foreground"
+          ? "flex flex-col border-white/10 shadow-elegant brand-gradient text-primary-foreground"
           : "bg-card shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
         className,
@@ -71,14 +71,7 @@ export function AppStatCard({
         />
       )}
       <div className="relative flex items-start justify-between gap-3">
-        <p
-          className={cn(
-            "text-sm font-medium",
-            destaque ? "text-primary-foreground/85" : "text-muted-foreground",
-          )}
-        >
-          {titulo}
-        </p>
+        <p className="font-sans font-medium text-muted-foreground leading-relaxed">{titulo}</p>
         <span
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
@@ -90,24 +83,26 @@ export function AppStatCard({
           <Icone className="size-4.5" aria-hidden />
         </span>
       </div>
-      <p className="font-display relative mt-3 text-[1.75rem] font-bold tracking-tight lining-nums tabular-nums">
+      <p
+        className={cn(
+          "font-sans relative font-bold tracking-tight lining-nums tabular-nums font-variant-numeric: tabular-nums;",
+          destaque ? "mt-auto text-[2rem]" : "mt-3 text-[1.5rem]",
+        )}
+      >
         {typeof valorNumerico === "number" ? (
           <AnimarNumero valor={valorNumerico} formato={formato} />
         ) : (
           valor
         )}
       </p>
-
-      <div
-        className={cn(
-          "mt-1 flex items-center gap-2 text-xs",
-          destaque ? "text-primary-foreground/80" : "text-muted-foreground",
-        )}
-      >
+      <div className="mt-2 flex items-center gap-2 text-sm">
         {typeof variacao === "number" && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 font-medium",
+              "inline-flex items-center gap-0.5",
+              destaque
+                ? "rounded-full bg-white/90 px-2 py-0.5 font-medium text-primary-foreground"
+                : "font-medium",
               positiva ? "text-success" : "text-destructive",
             )}
           >
