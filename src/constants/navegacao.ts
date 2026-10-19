@@ -3,7 +3,7 @@ import {
   Bell,
   CalendarDays,
   ClipboardList,
-  LayoutDashboard,
+  Layout,
   Settings,
   Trash2,
   Users,
@@ -27,7 +27,6 @@ export interface GrupoNavegacao {
  * Itens em ordem plana — consumido pela paleta de comandos (⌘K).
  */
 export const NAVEGACAO: ItemNavegacao[] = [
-  { para: "/", label: "Dashboard", icone: LayoutDashboard, descricao: "Visão geral do negócio" },
   { para: "/clientes", label: "Clientes", icone: Users, descricao: "Cadastro e histórico" },
   { para: "/reservas", label: "Reservas", icone: ClipboardList, descricao: "Locações e checklist" },
   { para: "/agenda", label: "Agenda", icone: CalendarDays, descricao: "Calendário e bloqueios" },
@@ -57,26 +56,26 @@ export const GRUPOS_NAVEGACAO: GrupoNavegacao[] = [
   {
     rotulo: "Operação",
     itens: [
-      NAVEGACAO[0]!, // Dashboard
-      NAVEGACAO[2]!, // Reservas
-      NAVEGACAO[3]!, // Agenda
+      NAVEGACAO[0]!, // Clientes
+      NAVEGACAO[1]!, // Reservas
+      NAVEGACAO[2]!, // Agenda
     ],
   },
   {
     rotulo: "Gestão",
     itens: [
-      NAVEGACAO[1]!, // Clientes
-      NAVEGACAO[4]!, // Financeiro
-      NAVEGACAO[5]!, // Relatórios
+      NAVEGACAO[0]!, // Clientes (agora índice 0 após remoção do Dashboard)
+      NAVEGACAO[2]!, // Financeiro (índice 2: financeiro era 3, agora 2 após remoção)
+      NAVEGACAO[3]!, // Relatórios (índice 3: relatórios era 4, agora 3 após remoção)
     ],
   },
   {
     rotulo: "Sistema",
     itens: [
-      NAVEGACAO[6]!, // Notificações
-      NAVEGACAO[7]!, // Auditoria
-      NAVEGACAO[8]!, // Lixeira
-      NAVEGACAO[9]!, // Configurações
+      NAVEGACAO[4]!, // Notificações (índice 4: notificações era 5, agora 4 após remoção do Dashboard)
+      NAVEGACAO[5]!, // Auditoria (índice 5: auditoria era 6, agora 5 após remoção)
+      NAVEGACAO[6]!, // Lixeira (índice 6: lixeira era 7, agora 6 após remoção)
+      NAVEGACAO[7]!, // Configurações (índice 7: configurações era 8, agora 7 após remoção)
     ],
   },
 ];
