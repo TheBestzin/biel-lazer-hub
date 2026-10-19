@@ -14,6 +14,18 @@ import { AdminService } from "@/services/AdminService";
 import { LogService } from "@/services/LogService";
 import type { Admin } from "@/types";
 
+/**
+ * Autorização: caminho rápido é o claim no token; se ele ainda não foi
+ * aplicado ao usuário (espera a service account), cai para o registro
+ * ativo em admins/{uid} — protegido por e-mail e senha do Firebase Auth.
+ */
+async function autorizarUsuario(user: User): Promise<Admin | null> {
+  const token = await user.getIdTokenResult();
+  if (token.claims["admin"] === true) return AdminService.obterPorUid(user.uid);
+  const registro = await AdminService.obterPorUid(user.uid);
+  return registro && registro.ativo ? registro : null;
+}
+
 interface EstadoAuth {
   carregando: boolean;
   usuario: User | null;
@@ -38,16 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       if (user) {
-        // A permissão vem do claim no token (aplicado por
-        // scripts/set-admin.mjs com a service account) — nunca de
-        // uma leitura de coleção no cliente.
-        const token = await user.getIdTokenResult();
-        if (token.claims["admin"] === true) {
-          const registro = await AdminService.obterPorUid(user.uid);
-          setAdmin(registro);
-        } else {
-          setAdmin(null);
-        }
+        // A permissão vem do claim no token (aplicado por scripts/set-admin.mjs).
+        // Sem claim, aceita o registro ativo na coleção admins.
+        const registro = await autorizarUsuario(user);
+        setAdmin(registro);
       } else {
         setAdmin(null);
       }
@@ -72,13 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const entrarComEmail = useCallback(async (email: string, senha: string) => {
     const credencial = await entrar(email, senha);
-    // Claim fresco no token emitido no login — sem claims, sem acesso.
-    const token = await credencial.user.getIdTokenResult();
-    if (token.claims["admin"] !== true) {
-      await sair();
-      throw new Error("Este usuário não possui acesso administrativo ao sistema.");
-    }
-    const registro = await AdminService.obterPorUid(credencial.user.uid);
+    // Claim fresco no token emitido no login — sem claims, valida pelo
+    // registro ativo em admins/{uid} (mesma verificação da sessão).
+    const registro = await autorizarUsuario(credencial.user);
     if (!registro || !registro.ativo) {
       await sair();
       throw new Error("Este usuário não possui acesso ativo ao sistema.");

@@ -75,6 +75,9 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
               </a>
             </Button>
           )}
+          <Button variant="ghost" size="sm" className="rounded-full" asChild>
+            <a href="/?login=1">Área do admin</a>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -112,6 +115,13 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
                 {link.rotulo}
               </a>
             ))}
+            <a
+              href="/?login=1"
+              onClick={() => setMenuAberto(false)}
+              className="block rounded-xl px-3 py-3 text-sm font-semibold text-primary transition-colors hover:bg-accent"
+            >
+              Área do admin
+            </a>
           </motion.nav>
         )}
       </AnimatePresence>
