@@ -20,16 +20,16 @@ import {
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
 
-// Contas de teste recebidas via env.authenticatedContext(id, token).
-const usuarioAdmin = () => ({
-  uid: "admin-uid",
-  email: "admin@area.com",
-  token: { admin: true, email: "admin@area.com" },
-});
+// Claims do token de teste. O uid vem do 1º argumento de
+// `authenticatedContext(uid, claims)` — nunca dentro do objeto de claims
+// (`uid` não é mais aceito pelo mockUserToken).
+const usuarioAdmin = () => ({ admin: true, email: "admin@area.com" });
 
-const semAdmin = () => ({ uid: "comum-uid", token: {} });
+const semAdmin = () => ({ email: "comum@area.com" });
 
-const projetId = "demo-biel-regras";
+// Mesmo projeto do emulador (firebase.json usa singleProjectMode); o script
+// `emulators:exec --project demo-biel` exporta GCLOUD_PROJECT.
+const projetId = process.env["GCLOUD_PROJECT"] ?? "demo-biel";
 
 let env;
 
@@ -46,14 +46,14 @@ test.beforeEach(async () => {
   await env.clearFirestore();
 });
 
-test.after.always(async () => {
+test.after(async () => {
   await env.cleanup();
 });
 
 /* ── Visitante anônimo ───────────────────────────────────────── */
 
 test("anônimo não lê reservas, clientes, logs, lixeira ou notificações", async () => {
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertFails(db.collection("reservas").doc("x").get());
   await assertFails(db.collection("clientes").doc("x").get());
   await assertFails(db.collection("logs").doc("x").get());
@@ -64,7 +64,7 @@ test("anônimo não lê reservas, clientes, logs, lixeira ou notificações", as
 });
 
 test("anônimo não escreve em reservas/clientes/bloqueios", async () => {
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertFails(db.collection("reservas").add({ data: "2026-10-20" }));
   await assertFails(db.collection("clientes").add({ nome: "Fulano" }));
   await assertFails(db.collection("bloqueios").add({ data: "2026-10-20" }));
@@ -73,22 +73,20 @@ test("anônimo não escreve em reservas/clientes/bloqueios", async () => {
 test("anônimo lê datas_ocupadas e configuracoes", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx
-      .database()
+      .firestore()
       .collection("datas_ocupadas")
       .doc("2026-10-20")
       .set({ status: "reservada", updatedAt: "2026-10-01T12:00:00Z" });
   });
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertSucceeds(db.collection("datas_ocupadas").doc("2026-10-20").get());
   await assertSucceeds(db.collection("datas_ocupadas").get());
   await assertSucceeds(db.collection("configuracoes").doc("geral").get());
 });
 
 test("anônimo NÃO pode escrever datas_ocupadas", async () => {
-  const db = env.unauthenticatedContext().database();
-  await assertFails(
-    db.collection("datas_ocupadas").doc("2026-11-01").set({ status: "bloqueada" }),
-  );
+  const db = env.unauthenticatedContext().firestore();
+  await assertFails(db.collection("datas_ocupadas").doc("2026-11-01").set({ status: "bloqueada" }));
 });
 
 /* ── Solicitações públicas ──────────────────────────────────── */
@@ -102,55 +100,47 @@ const solicitacaoValida = {
 };
 
 test("anônimo cria solicitação válida", async () => {
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertSucceeds(db.collection("solicitacoes").add(solicitacaoValida));
 });
 
 test("recusa campos extras, nome curto, telefone inválido e limite de convidados", async () => {
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertFails(
     db.collection("solicitacoes").add({ ...solicitacaoValida, cpf: "12345678900" }),
   );
   await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, nome: "M" }));
-  await assertFails(
-    db.collection("solicitacoes").add({ ...solicitacaoValida, telefone: "99999" }),
-  );
-  await assertFails(
-    db.collection("solicitacoes").add({ ...solicitacaoValida, convidados: 201 }),
-  );
-  await assertFails(
-    db.collection("solicitacoes").add({ ...solicitacaoValida, convidados: 0 }),
-  );
+  await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, telefone: "99999" }));
+  await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, convidados: 201 }));
+  await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, convidados: 0 }));
 });
 
 test("recusa solicitação em data já ocupada (choque de datas)", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx
-      .database()
+      .firestore()
       .collection("datas_ocupadas")
       .doc(solicitacaoValida.data)
       .set({ status: "reservada", updatedAt: "2026-10-01T12:00:00Z" });
   });
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertFails(db.collection("solicitacoes").add(solicitacaoValida));
 });
 
 test("anônimo não altera nem lista solicitações alheias", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
-    await ctx.database().collection("solicitacoes").doc("req1").set(solicitacaoValida);
+    await ctx.firestore().collection("solicitacoes").doc("req1").set(solicitacaoValida);
   });
-  const db = env.unauthenticatedContext().database();
+  const db = env.unauthenticatedContext().firestore();
   await assertFails(db.collection("solicitacoes").get());
   await assertFails(db.collection("solicitacoes").doc("req1").get());
-  await assertFails(
-    db.collection("solicitacoes").doc("req1").update({ convidados: 10 }),
-  );
+  await assertFails(db.collection("solicitacoes").doc("req1").update({ convidados: 10 }));
 });
 
 /* ── Admin com claim ────────────────────────────────────────── */
 
 test("admin (claim) lê e escreve coleções administrativas e cria datas_ocupadas", async () => {
-  const db = env.authenticatedContext("admin-uid", usuarioAdmin()).database();
+  const db = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
   await assertSucceeds(db.collection("reservas").get());
   await assertSucceeds(
     db.collection("reservas").doc("r1").set({ clienteId: "c1", data: "2026-12-20" }),
@@ -164,16 +154,14 @@ test("admin (claim) lê e escreve coleções administrativas e cria datas_ocupad
 });
 
 test("autenticado SEM claim não lê dados nem escreve reservas", async () => {
-  const db = env.authenticatedContext("comum-uid", semAdmin()).database();
+  const db = env.authenticatedContext("comum-uid", semAdmin()).firestore();
   await assertFails(db.collection("reservas").get());
   await assertFails(db.collection("reservas").add({ data: "2026-12-20" }));
-  await assertFails(
-    db.collection("datas_ocupadas").doc("2026-12-21").set({ status: "bloqueada" }),
-  );
+  await assertFails(db.collection("datas_ocupadas").doc("2026-12-21").set({ status: "bloqueada" }));
 });
 
 test("logs: só create do próprio uid; nunca update/delete (nem do admin)", async () => {
-  const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).database();
+  const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
   await assertSucceeds(
     dbAdmin.collection("logs").add({
       usuario: "admin-uid",
@@ -199,7 +187,7 @@ test("logs: só create do próprio uid; nunca update/delete (nem do admin)", asy
 });
 
 test("admins: qualquer um lê o próprio doc; criar-account público é bloqueado", async () => {
-  const dbAnon = env.unauthenticatedContext().database();
+  const dbAnon = env.unauthenticatedContext().firestore();
   await assertFails(
     dbAnon
       .collection("admins")
@@ -208,12 +196,12 @@ test("admins: qualquer um lê o próprio doc; criar-account público é bloquead
   );
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx
-      .database()
+      .firestore()
       .collection("admins")
       .doc("admin-uid")
       .set({ nome: "Admin", email: "admin@area.com", ativo: true });
   });
   // O próprio admin autenticado lê o próprio registro.
-  const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).database();
+  const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
   await assertSucceeds(dbAdmin.collection("admins").doc("admin-uid").get());
 });
