@@ -61,11 +61,35 @@ export function CardsSkeleton({ quantidade = 4 }: { quantidade?: number }) {
           style={{ animationDelay: `${indice * 60}ms` }}
         >
           <div className="flex items-start justify-between">
+            <Skeleton className="h-4 w-20 rounded-full" />
             <Skeleton className="size-10 rounded-xl" />
-            <Skeleton className="h-4 w-14 rounded-full" />
           </div>
-          <Skeleton className="mt-4 h-7 w-2/3" />
-          <Skeleton className="mt-2 h-3.5 w-1/2" />
+          <Skeleton className="mt-4 h-8 w-2/3" />
+          <Skeleton className="mt-3 h-3.5 w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Skeleton da tabela: cabeçalho + linhas no formato das colunas. */
+export function TabelaSkeleton({ linhas = 6, colunas = 5 }: { linhas?: number; colunas?: number }) {
+  return (
+    <div className="space-y-2" aria-busy>
+      <div className="flex gap-3 border-b pb-2">
+        {Array.from({ length: colunas }).map((_, indice) => (
+          <Skeleton key={indice} className="h-3.5 flex-1 rounded-full" />
+        ))}
+      </div>
+      {Array.from({ length: linhas }).map((_, indice) => (
+        <div key={indice} className="flex items-center gap-3 rounded-xl p-2">
+          {Array.from({ length: colunas }).map((__, coluna) => (
+            <Skeleton
+              key={coluna}
+              className="h-4 flex-1"
+              style={{ animationDelay: `${indice * 60}ms` }}
+            />
+          ))}
         </div>
       ))}
     </div>

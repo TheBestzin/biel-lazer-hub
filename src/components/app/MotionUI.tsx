@@ -118,11 +118,12 @@ export function ItemLista({
   indice: number;
   children: ReactNode;
   className?: string;
-  /** Renderizar como `li` quando o item for filho direto de uma `<ul>`. */
-  elemento?: "div" | "li";
+  /** Renderizar como `li`/`tr` quando o item for filho direto de uma
+   * `<ul>` ou da tabela. */
+  elemento?: "div" | "li" | "tr";
 }) {
   const reduzir = useReducedMotion();
-  const Comp = elemento === "li" ? motion.li : motion.div;
+  const Comp = elemento === "li" ? motion.li : elemento === "tr" ? motion.tr : motion.div;
   return (
     <Comp
       custom={indice}
@@ -161,5 +162,41 @@ export function Revelar({
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * Barra de progresso que cresce da esquerda para a direita ao montar
+ * (transform/opacity, 600ms). Usar em metas e taxas de ocupação.
+ * Sob reduced-motion aparece preenchida, sem animação.
+ *
+ *   <BarraProgresso valor={62} />
+ */
+export function BarraProgresso({
+  valor,
+  className,
+}: {
+  /** Percentual de 0 a 100. */
+  valor: number;
+  className?: string | undefined;
+}) {
+  const reduzir = useReducedMotion();
+  const frente = Math.min(100, Math.max(0, valor));
+  return (
+    <div
+      className={cn("h-2.5 w-full overflow-hidden rounded-full bg-muted", className)}
+      role="progressbar"
+      aria-valuenow={Math.round(frente)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <motion.div
+        className="brand-gradient h-full w-full origin-left rounded-full"
+        initial={reduzir ? { scaleX: frente / 100 } : { scaleX: 0 }}
+        animate={{ scaleX: frente / 100 }}
+        transition={reduzir ? { duration: 0 } : { duration: 0.6, ease: "easeOut" }}
+        aria-hidden
+      />
+    </div>
   );
 }

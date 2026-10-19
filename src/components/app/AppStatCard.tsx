@@ -23,6 +23,8 @@ interface AppStatCardProps {
   aoClicar?: () => void;
   indice?: number;
   className?: string;
+  /** Card de destaque: fundo em gradiente da marca (azul/ciano). */
+  destaque?: boolean;
 }
 
 export function AppStatCard({
@@ -37,6 +39,7 @@ export function AppStatCard({
   aoClicar,
   indice = 0,
   className,
+  destaque = false,
 }: AppStatCardProps) {
   const reduzir = useReducedMotion();
   const positiva = (variacao ?? 0) >= 0;
@@ -47,7 +50,10 @@ export function AppStatCard({
       initial="initial"
       animate="animate"
       className={cn(
-        "group card-hover relative overflow-hidden rounded-2xl border bg-card p-5 shadow-elegant",
+        "group card-hover relative overflow-hidden rounded-2xl border p-5",
+        destaque
+          ? "border-white/10 shadow-glow brand-gradient text-primary-foreground"
+          : "bg-card shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
         className,
       )}
@@ -58,13 +64,29 @@ export function AppStatCard({
         if (aoClicar && (evento.key === "Enter" || evento.key === " ")) aoClicar();
       }}
     >
-      <span
-        className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full brand-gradient opacity-[0.08] blur-2xl transition-opacity duration-300 group-hover:opacity-20"
-        aria-hidden
-      />
+      {!destaque && (
+        <span
+          className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full brand-gradient opacity-[0.08] blur-2xl transition-opacity duration-300 group-hover:opacity-20"
+          aria-hidden
+        />
+      )}
       <div className="relative flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-muted-foreground">{titulo}</p>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-105">
+        <p
+          className={cn(
+            "text-sm font-medium",
+            destaque ? "text-primary-foreground/85" : "text-muted-foreground",
+          )}
+        >
+          {titulo}
+        </p>
+        <span
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
+            destaque
+              ? "bg-white/15 text-primary-foreground ring-1 ring-white/25"
+              : "bg-primary-soft text-primary ring-1 ring-primary/10",
+          )}
+        >
           <Icone className="size-4.5" aria-hidden />
         </span>
       </div>
@@ -76,7 +98,12 @@ export function AppStatCard({
         )}
       </p>
 
-      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+      <div
+        className={cn(
+          "mt-1 flex items-center gap-2 text-xs",
+          destaque ? "text-primary-foreground/80" : "text-muted-foreground",
+        )}
+      >
         {typeof variacao === "number" && (
           <span
             className={cn(
