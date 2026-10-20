@@ -93,28 +93,28 @@ export function HeroSite({ whatsapp, entrada, saida, valorDiaria }: HeroSiteProp
           transition={{ duration: 0.7, ease: EASING }}
           className="space-y-5"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-[0.7rem] font-bold tracking-[0.25em] text-primary uppercase backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-[0.7rem] font-semibold tracking-[0.15em] text-primary uppercase">
             <Sparkles className="size-3" aria-hidden />
             Reservas online
           </span>
-          <h1 className="font-display max-w-3xl text-4xl leading-[1.08] font-semibold tracking-[-0.01em] text-foreground text-balance sm:text-6xl lg:text-7xl">
+          <h1 className="font-display max-w-3xl text-4xl leading-[1.05] font-semibold tracking-tight text-foreground text-balance sm:text-5xl md:text-6xl lg:text-6xl">
             Área de Lazer Biel
           </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-foreground/80 sm:text-2xl sm:leading-snug">
+          <p className="max-w-xl text-lg leading-relaxed text-foreground/80 sm:text-xl sm:leading-relaxed">
             Seu dia de descanso começa aqui.
           </p>
-          <p className="text-sm font-medium tracking-[0.18em] text-primary uppercase">
+          <p className="text-sm font-semibold tracking-[0.12em] text-primary uppercase">
             Piscina • Área gourmet • Espaço exclusivo
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button size="xl" className="tap-press shadow-glow" asChild>
+            <Button size="xl" className="tap-press" asChild>
               <a href="#reservar">
                 <CalendarDays className="size-4.5" aria-hidden />
                 Ver datas disponíveis
               </a>
             </Button>
             {tel && (
-              <Button size="xl" variant="outline" className="backdrop-blur" asChild>
+              <Button size="xl" variant="outline" className="tap-press" asChild>
                 <a href={`https://wa.me/55${tel}`} target="_blank" rel="noreferrer">
                   <MessageCircle className="size-4.5" aria-hidden />
                   Falar no WhatsApp
@@ -128,21 +128,21 @@ export function HeroSite({ whatsapp, entrada, saida, valorDiaria }: HeroSiteProp
           initial={reduzir ? { opacity: 0 } : { opacity: 0, y: 20 }}
           animate={reduzir ? { opacity: 1 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15, ease: EASING }}
-          className="grid gap-px overflow-hidden rounded-3xl border border-border/70 bg-border/60 shadow-elegant sm:grid-cols-3"
+          className="grid gap-px overflow-hidden rounded-3xl border border-border/70 bg-card/70 p-1 shadow-elegant sm:grid-cols-3"
         >
           {destaques.map((item) => (
             <div
               key={item.rotulo}
-              className="flex items-center gap-4 bg-card/85 p-5 backdrop-blur-xl sm:p-6"
+              className="flex items-center gap-4 px-5 py-4 sm:px-6"
             >
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/12 text-primary">
-                <item.icone className="size-5" aria-hidden />
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                <item.icone className="size-4.5" aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className="text-[0.65rem] font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                <p className="text-[0.65rem] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
                   {item.rotulo}
                 </p>
-                <p className="truncate font-semibold tabular-nums">{item.texto}</p>
+                <p className="mt-0.5 font-semibold tabular-nums text-foreground">{item.texto}</p>
               </div>
             </div>
           ))}

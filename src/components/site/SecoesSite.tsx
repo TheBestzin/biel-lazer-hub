@@ -17,11 +17,11 @@ export function TituloSecao({
 }) {
   return (
     <div className="mx-auto max-w-2xl space-y-3 text-center">
-      <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-[0.65rem] font-bold tracking-[0.22em] text-primary uppercase">
+      <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-0.5 text-[0.65rem] font-semibold tracking-[0.14em] text-primary uppercase">
         <Sparkles className="size-3" aria-hidden />
         {kicker}
       </span>
-      <h2 className="section-titulo text-3xl font-bold sm:text-4xl">{titulo}</h2>
+      <h2 className="section-titulo text-3xl font-semibold sm:text-4xl">{titulo}</h2>
       {descricao && <p className="text-pretty text-muted-foreground">{descricao}</p>}
     </div>
   );

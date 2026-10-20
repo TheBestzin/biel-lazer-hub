@@ -147,7 +147,7 @@ export function TelaLogin() {
             />
           </div>
         </div>
-        <Button type="submit" className="tap-press w-full shadow-glow" disabled={enviando}>
+        <Button type="submit" className="tap-press w-full" disabled={enviando}>
           {enviando && <Loader2 className="size-4 animate-spin" aria-hidden />}
           Entrar
         </Button>

@@ -199,7 +199,7 @@ export function EtapaHorario({
               className={cn(
                 "relative flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 ativo
-                  ? "border-primary bg-primary-soft shadow-glow"
+                  ? "border-primary bg-primary-soft"
                   : "border-border bg-background/50 hover:border-primary/40 hover:bg-primary-soft/60",
               )}
             >
@@ -500,7 +500,7 @@ export function EtapaConfirmacao({
         </Button>
         <Button
           size="lg"
-          className="tap-press shadow-glow"
+          className="tap-press"
           onClick={aoConfirmar}
           disabled={enviando || !data || !aceiteLGPD}
         >
@@ -612,7 +612,7 @@ export function TelaSucesso({
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         {tel && (
-          <Button size="lg" className="tap-press shadow-glow" asChild>
+          <Button size="lg" variant="outline" className="tap-press" asChild>
             <a href={`https://wa.me/55${tel}`} target="_blank" rel="noreferrer">
               <MessageCircle className="size-4.5" aria-hidden />
               Falar no WhatsApp

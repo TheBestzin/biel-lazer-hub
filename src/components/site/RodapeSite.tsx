@@ -12,7 +12,7 @@ export function CtaBarraMobile({ whatsapp }: { whatsapp: string }) {
   return (
     <div className="cta-barra-mobile fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 p-3 backdrop-blur-xl sm:hidden">
       <div className="flex gap-2">
-        <Button className="tap-press min-h-11 flex-1 shadow-glow" asChild>
+        <Button className="tap-press min-h-11 flex-1" asChild>
           <a href="#reservar">
             <CalendarDays className="size-4.5" aria-hidden />
             Ver datas
@@ -59,7 +59,7 @@ export function RodapeSite({ whatsapp, entrada, saida }: RodapeSiteProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+          <h3 className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Informações
           </h3>
           <ul className="space-y-2.5 text-sm">
@@ -84,7 +84,7 @@ export function RodapeSite({ whatsapp, entrada, saida }: RodapeSiteProps) {
             Garanta sua data em poucos minutos — reserve online ou fale direto com a gente.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" className="tap-press rounded-full shadow-glow" asChild>
+            <Button size="sm" className="tap-press rounded-full" asChild>
               <a href="#reservar">
                 <CalendarDays className="size-4" aria-hidden />
                 Reservar data

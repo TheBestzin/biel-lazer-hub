@@ -98,17 +98,16 @@ export function Depoimentos() {
             </div>
           </div>
 
-          <div className="mt-5 flex items-center justify-center gap-4">
+          <div className="mt-5 flex items-center justify-center gap-3">
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full"
               aria-label="Depoimento anterior"
               onClick={() => apiEmbla?.scrollPrev()}
             >
               <ChevronLeft className="size-4" aria-hidden />
             </Button>
-            <div className="flex gap-1.5" role="tablist" aria-label="Escolher depoimento">
+            <div className="flex gap-2" role="tablist" aria-label="Escolher depoimento">
               {DEPOIMENTOS.map((depoimento, i) => (
                 <button
                   key={depoimento.autor}
@@ -118,7 +117,7 @@ export function Depoimentos() {
                   aria-label={`Depoimento ${i + 1}`}
                   onClick={() => apiEmbla?.scrollTo(i)}
                   className={cn(
-                    "h-1.5 rounded-full transition-all duration-300",
+                    "h-1.5 rounded-full transition-all duration-200",
                     i === indice
                       ? "w-6 bg-primary"
                       : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50",
@@ -129,7 +128,6 @@ export function Depoimentos() {
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full"
               aria-label="Próximo depoimento"
               onClick={() => apiEmbla?.scrollNext()}
             >

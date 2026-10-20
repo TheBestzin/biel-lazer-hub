@@ -505,7 +505,7 @@ function PaginaReservarPublica() {
                       <Button
                         onClick={avancar}
                         size="lg"
-                        className="tap-press min-h-11 min-w-40 flex-1 shadow-glow sm:flex-none"
+                        className="tap-press min-h-11 min-w-40 flex-1 sm:flex-none"
                       >
                         {etapa === 2 ? "Revisar reserva" : "Continuar"}
                         <ArrowRight className="size-4" aria-hidden />

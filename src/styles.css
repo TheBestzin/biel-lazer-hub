@@ -77,8 +77,7 @@
   --shadow-card: 0 1px 3px oklch(0.2 0.03 240 / 0.06), 0 8px 24px -12px oklch(0.2 0.03 240 / 0.14);
   --shadow-elevated:
     0 2px 6px oklch(0.2 0.03 240 / 0.06), 0 16px 44px -16px oklch(0.2 0.03 240 / 0.2);
-  --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);
-  --shadow-glow: 0 10px 24px -10px color-mix(in oklab, var(--primary) 30%, transparent);
+  --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);  --shadow-glow: 0 10px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
 :root {
@@ -351,12 +350,11 @@
 @keyframes brilho-cta {
   0%,
   100% {
-    box-shadow: 0 18px 48px -18px color-mix(in oklab, var(--primary) 55%, transparent);
+    box-shadow: 0 12px 32px -14px color-mix(in oklab, var(--primary) 35%, transparent);
   }
   50% {
     box-shadow:
-      0 18px 48px -14px color-mix(in oklab, var(--primary) 75%, transparent),
-      0 0 0 6px color-mix(in oklab, var(--primary) 12%, transparent);
+      0 14px 36px -12px color-mix(in oklab, var(--primary) 55%, transparent);
   }
 }
 
