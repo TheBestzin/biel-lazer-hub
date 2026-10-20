@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownCircle, ArrowUpCircle, Loader2, Plus, Trash2, Wallet } from "lucide-react";
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Trash2,
+  Wallet,
+} from "lucide-react";
 import { useMemo, useState } from "react";
+import { addMonths, format } from "date-fns";
+import { z } from "zod";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
@@ -28,16 +39,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CATEGORIAS_DESPESA } from "@/constants";
 import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
 import { chaves, useAcao, useDespesas, useMovimentos, useReservas } from "@/hooks/useDados";
 import { DespesaService } from "@/services/DespesaService";
 import { LogService } from "@/services/LogService";
 import type { CategoriaDespesa, Despesa } from "@/types";
-import { formatarData, formatarMoeda } from "@/utils/formatadores";
+import { formatarData, formatarMoeda, variacaoPercentual } from "@/utils/formatadores";
+
+/** Mês e aba da página na URL — voltar/compartilhar preserva a visão. */
+const filtros = z.object({
+  mes: z.string().optional(),
+  aba: z.enum(["receitas", "despesas"]).optional(),
+});
 
 export const Route = createFileRoute("/financeiro")({
+  validateSearch: filtros,
   head: () => ({
     meta: [
       { title: "Financeiro — Área de Lazer Biel" },
@@ -52,22 +79,37 @@ export const Route = createFileRoute("/financeiro")({
   component: PaginaFinanceiro,
 });
 
+type Abas = NonNullable<z.infer<typeof filtros>["aba"]>;
+
 const hojeISO = () => new Date().toISOString().slice(0, 10);
+const MES_VALIDO = /^\d{4}-\d{2}$/;
+
+/** Move o mês em `"yyyy-MM"` por `delta` meses. */
+function moverMes(mes: string, delta: number): string {
+  const base = new Date(`${mes}-01T12:00:00`);
+  return format(addMonths(base, delta), "yyyy-MM");
+}
+
+/** Variação do mês em texto curto para os stat cards. */
+function textoVariacao(atual: number, anterior: number): string {
+  if (!anterior) return atual ? "Sem registros no mês anterior" : "Mês anterior sem registros";
+  const variacao = variacaoPercentual(atual, anterior);
+  if (variacao === null) return "Sem base de comparação";
+  const sinal = variacao >= 0 ? "▲" : "▼";
+  return `${sinal} ${Math.abs(variacao).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% vs. mês anterior`;
+}
+
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
 
 function PaginaFinanceiro() {
   const { admin } = useAuth();
   const { data: movimentos, isLoading } = useMovimentos();
   const { data: reservas } = useReservas();
   const { data: despesas } = useDespesas();
-  const [aba, setAba] = useState("receitas");
-  const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
-  const [formAberto, setFormAberto] = useState(false);
-  const [paraExcluir, setParaExcluir] = useState<Despesa | null>(null);
-
-  const [categoria, setCategoria] = useState<CategoriaDespesa>("outros");
-  const [descricao, setDescricao] = useState("");
-  const [valor, setValor] = useState(0);
-  const [data, setData] = useState(hojeISO);
+  const search = Route.useSearch();
+  const navegar = Route.useNavigate();
 
   /** Receitas derivadas das reservas (fonte da verdade) + lançamentos manuais sem reserva. */
   const receitas = useMemo(() => {
@@ -92,24 +134,43 @@ function PaginaFinanceiro() {
     return [...deReservas, ...manuais].sort((a, b) => b.data.localeCompare(a.data));
   }, [reservas, movimentos]);
 
-  const meses = useMemo(() => {
-    const chavesMes = new Set<string>([new Date().toISOString().slice(0, 7)]);
-    receitas.forEach((m) => chavesMes.add(m.data.slice(0, 7)));
-    despesas.forEach((d) => chavesMes.add(d.data.slice(0, 7)));
-    return Array.from(chavesMes).sort((a, b) => b.localeCompare(a));
-  }, [receitas, despesas]);
+  const searchMes = search.mes && MES_VALIDO.test(search.mes) ? search.mes : undefined;
+  const mes = searchMes ?? new Date().toISOString().slice(0, 7);
+  const aba: Abas = search.aba ?? "receitas";
+
+  const mudarSearch = (patch: { mes?: string | undefined; aba?: Abas | undefined }) =>
+    void navegar({ search: (anterior) => ({ ...anterior, ...patch }), replace: true });
 
   const receitasMes = useMemo(
-    () => receitas.filter((m) => m.data.startsWith(mes)),
+    () =>
+      receitas.filter((m) => m.data.startsWith(mes)).sort((a, b) => b.data.localeCompare(a.data)),
     [receitas, mes],
   );
   const despesasMes = useMemo(
-    () => despesas.filter((d) => d.data.startsWith(mes)),
+    () =>
+      despesas.filter((d) => d.data.startsWith(mes)).sort((a, b) => b.data.localeCompare(a.data)),
     [despesas, mes],
   );
 
   const totalReceitas = receitasMes.reduce((total, m) => total + m.valor, 0);
   const totalDespesas = despesasMes.reduce((total, d) => total + d.valor, 0);
+
+  /* Mês anterior para comparação nos stat cards. */
+  const mesAnterior = moverMes(mes, -1);
+  const receitasAnterior = receitas
+    .filter((m) => m.data.startsWith(mesAnterior))
+    .reduce((total, m) => total + m.valor, 0);
+  const despesasAnterior = despesas
+    .filter((d) => d.data.startsWith(mesAnterior))
+    .reduce((total, d) => total + d.valor, 0);
+
+  const [formAberto, setFormAberto] = useState(false);
+  const [paraExcluir, setParaExcluir] = useState<Despesa | null>(null);
+
+  const [categoria, setCategoria] = useState<CategoriaDespesa>("outros");
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState(0);
+  const [data, setData] = useState(hojeISO);
 
   const salvarDespesa = useAcao(
     async () => {
@@ -163,77 +224,99 @@ function PaginaFinanceiro() {
     },
   );
 
+  const listaAtual = aba === "receitas" ? receitasMes : despesasMes;
+
   return (
     <div className="space-y-6">
       <PageHeader
         titulo="Financeiro"
         descricao="Receitas das locações, despesas e saldo consolidado."
         acoes={
-          <>
-            <Select value={mes} onValueChange={setMes}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {meses.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {formatarData(`${item}-01`, "MMMM 'de' yyyy")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => setFormAberto(true)}>
-              <Plus className="size-4" aria-hidden /> Nova despesa
-            </Button>
-          </>
+          <Button onClick={() => setFormAberto(true)}>
+            <Plus className="size-4" aria-hidden /> Nova despesa
+          </Button>
         }
       />
+
+      {/* Navegação de mês + abas com contagem */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div
+          className="inline-flex items-center gap-1 rounded-2xl border bg-card px-2 py-1.5"
+          role="group"
+          aria-label="Selecionar mês"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full"
+            onClick={() => mudarSearch({ mes: moverMes(mes, -1) })}
+            aria-label="Mês anterior"
+          >
+            <ChevronLeft className="size-4" aria-hidden />
+          </Button>
+          <span className="min-w-32 text-center text-sm font-semibold">
+            {capitalizar(formatarData(`${mes}-01`, "MMMM 'de' yyyy"))}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full"
+            onClick={() => mudarSearch({ mes: moverMes(mes, 1) })}
+            aria-label="Próximo mês"
+          >
+            <ChevronRight className="size-4" aria-hidden />
+          </Button>
+        </div>
+
+        <Tabs value={aba} onValueChange={(valor) => mudarSearch({ aba: valor as Abas })}>
+          <TabsList>
+            <TabsTrigger value="receitas">
+              Receitas
+              <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">
+                {receitasMes.length}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="despesas">
+              Despesas
+              <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">
+                {despesasMes.length}
+              </span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <AppStatCard
           titulo="Receitas do mês"
           valor={formatarMoeda(totalReceitas)}
           icone={ArrowUpCircle}
-          descricao={`${receitasMes.length} lançamento(s)`}
+          descricao={textoVariacao(totalReceitas, receitasAnterior)}
           indice={0}
         />
         <AppStatCard
           titulo="Despesas do mês"
           valor={formatarMoeda(totalDespesas)}
           icone={ArrowDownCircle}
-          descricao={`${despesasMes.length} lançamento(s)`}
+          descricao={textoVariacao(totalDespesas, despesasAnterior)}
           indice={1}
         />
         <AppStatCard
           titulo="Saldo do mês"
           valor={formatarMoeda(totalReceitas - totalDespesas)}
           icone={Wallet}
-          descricao="Receitas menos despesas"
+          descricao={textoVariacao(
+            totalReceitas - totalDespesas,
+            receitasAnterior - despesasAnterior,
+          )}
           indice={2}
         />
       </div>
 
       <LembretesPagamento />
 
-      <Tabs value={aba} onValueChange={setAba}>
-        <TabsList>
-          <TabsTrigger value="receitas">Receitas</TabsTrigger>
-          <TabsTrigger value="despesas">Despesas</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
       <TransicaoEstado
-        estado={
-          isLoading
-            ? "carregando"
-            : aba === "receitas"
-              ? receitasMes.length === 0
-                ? "vazio"
-                : "pronto"
-              : despesasMes.length === 0
-                ? "vazio"
-                : "pronto"
-        }
+        estado={isLoading ? "carregando" : listaAtual.length === 0 ? "vazio" : "pronto"}
       >
         {isLoading ? (
           <ListaSkeleton />
@@ -245,25 +328,12 @@ function PaginaFinanceiro() {
               descricao="As receitas são geradas automaticamente ao registrar pagamentos de reservas."
             />
           ) : (
-            <div className="space-y-2">
-              {receitasMes.map((movimento, indice) => (
-                <ItemLista key={movimento.id} indice={indice}>
-                  <Card>
-                    <CardContent className="flex items-center justify-between gap-4 p-4">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{movimento.descricao}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatarData(movimento.data)} · {movimento.categoria}
-                        </p>
-                      </div>
-                      <span className="text-sm font-semibold text-success tabular-nums">
-                        +{formatarMoeda(movimento.valor)}
-                      </span>
-                    </CardContent>
-                  </Card>
-                </ItemLista>
-              ))}
-            </div>
+            <ListaMovimentos
+              tipo="receita"
+              movimentos={receitasMes}
+              aoExcluir={() => undefined}
+              baseIndice={0}
+            />
           )
         ) : despesasMes.length === 0 ? (
           <AppEmptyState
@@ -273,35 +343,12 @@ function PaginaFinanceiro() {
             acao={{ label: "Nova despesa", aoClicar: () => setFormAberto(true) }}
           />
         ) : (
-          <div className="space-y-2">
-            {despesasMes.map((despesa, indice) => (
-              <ItemLista key={despesa.id} indice={indice}>
-                <Card>
-                  <CardContent className="flex items-center justify-between gap-4 p-4">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{despesa.descricao}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatarData(despesa.data)} · {CATEGORIAS_DESPESA[despesa.categoria]}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-destructive tabular-nums">
-                        −{formatarMoeda(despesa.valor)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Excluir despesa"
-                        onClick={() => setParaExcluir(despesa)}
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ItemLista>
-            ))}
-          </div>
+          <ListaMovimentos
+            tipo="despesa"
+            movimentos={despesasMes}
+            aoExcluir={setParaExcluir}
+            baseIndice={0}
+          />
         )}
       </TransicaoEstado>
 
@@ -360,10 +407,7 @@ function PaginaFinanceiro() {
             <Button variant="outline" onClick={() => setFormAberto(false)}>
               Cancelar
             </Button>{" "}
-            <Button
-              onClick={() => salvarDespesa.mutate(undefined as never)}
-              disabled={salvarDespesa.isPending}
-            >
+            <Button onClick={() => salvarDespesa.mutate()} disabled={salvarDespesa.isPending}>
               {salvarDespesa.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               Salvar despesa
             </Button>
@@ -381,5 +425,124 @@ function PaginaFinanceiro() {
         aoConfirmar={() => paraExcluir && excluirDespesa.mutate(paraExcluir)}
       />
     </div>
+  );
+}
+
+type MovimentoLista = {
+  id: string;
+  descricao: string;
+  categoria: string;
+  data: string;
+  valor: number;
+};
+
+/** Lista de lançamentos: tabela no desktop, cards no celular. */
+function ListaMovimentos({
+  tipo,
+  movimentos,
+  aoExcluir,
+  baseIndice,
+}: {
+  tipo: "receita" | "despesa";
+  movimentos: MovimentoLista[];
+  aoExcluir: (despesa: Despesa) => void;
+  baseIndice: number;
+}) {
+  const sinal = tipo === "receita" ? "+" : "−";
+  const cor = tipo === "receita" ? "text-success" : "text-destructive";
+
+  return (
+    <>
+      {/* Mobile */}
+      <div className="space-y-2 md:hidden">
+        {movimentos.map((movimento, indice) => (
+          <ItemLista key={movimento.id} indice={baseIndice + indice}>
+            <Card>
+              <CardContent className="flex items-center justify-between gap-4 p-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{movimento.descricao}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatarData(movimento.data)} · {movimento.categoria}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-semibold ${cor} tabular-nums`}>
+                    {sinal}
+                    {formatarMoeda(movimento.valor)}
+                  </span>
+                  {tipo === "despesa" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Excluir despesa"
+                      onClick={() => aoExcluir(movimento as Despesa)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </ItemLista>
+        ))}
+      </div>
+
+      {/* Desktop */}
+      <Card className="hidden md:block">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="min-w-48">Descrição</TableHead>
+                <TableHead className="w-[10rem]">Categoria</TableHead>
+                <TableHead className="w-[8rem]">Data</TableHead>
+                <TableHead className="w-[8rem] text-right">Valor</TableHead>
+                {tipo === "despesa" && <TableHead className="w-[4rem] text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {movimentos.map((movimento, indice) => (
+                <ItemLista
+                  key={movimento.id}
+                  indice={baseIndice + indice}
+                  elemento="tr"
+                  className="bg-transparent transition-colors duration-150 hover:bg-primary-soft/40"
+                >
+                  <TableRow className="border-0 bg-transparent hover:bg-transparent">
+                    <TableCell className="font-medium">{movimento.descricao}</TableCell>
+                    <TableCell className="text-muted-foreground">{movimento.categoria}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                      {formatarData(movimento.data)}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${cor} tabular-nums`}>
+                      {sinal}
+                      {formatarMoeda(movimento.valor)}
+                    </TableCell>
+                    {tipo === "despesa" && (
+                      <TableCell className="text-right">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-full text-destructive hover:text-destructive"
+                              aria-label={`Excluir ${movimento.descricao}`}
+                              onClick={() => aoExcluir(movimento as Despesa)}
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Excluir</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                </ItemLista>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }

@@ -42,22 +42,34 @@ function usarConsulta<T>(chave: QueryKey, fn: () => Promise<T>, vazio: T) {
 }
 
 export const useClientes = (incluirExcluidos = false) =>
-  usarConsulta([...(chaves.clientes as string[]), incluirExcluidos], () => ClienteService.listar(incluirExcluidos), []);
+  usarConsulta(
+    [...(chaves.clientes as string[]), incluirExcluidos],
+    () => ClienteService.listar(incluirExcluidos),
+    [],
+  );
 
 export const useCliente = (id: string) =>
   usarConsulta(chaves.cliente(id), () => ClienteService.obter(id), null);
 
 export const useReservas = (incluirExcluidas = false) =>
-  usarConsulta([...(chaves.reservas as string[]), incluirExcluidas], () => ReservaService.listar(incluirExcluidas), []);
+  usarConsulta(
+    [...(chaves.reservas as string[]), incluirExcluidas],
+    () => ReservaService.listar(incluirExcluidas),
+    [],
+  );
 
 export const useReservasDoCliente = (id: string) =>
   usarConsulta(chaves.reservasCliente(id), () => ReservaService.listarPorCliente(id), []);
 
 export const useDespesas = () => usarConsulta(chaves.despesas, () => DespesaService.listar(), []);
-export const useMovimentos = () => usarConsulta(chaves.financeiro, () => FinanceiroService.listar(), []);
-export const useBloqueios = () => usarConsulta(chaves.bloqueios, () => BloqueioService.listar(), []);
-export const useListaEspera = () => usarConsulta(chaves.listaEspera, () => ListaEsperaService.listar(), []);
-export const useNotificacoes = () => usarConsulta(chaves.notificacoes, () => NotificacaoService.listar(), []);
+export const useMovimentos = () =>
+  usarConsulta(chaves.financeiro, () => FinanceiroService.listar(), []);
+export const useBloqueios = () =>
+  usarConsulta(chaves.bloqueios, () => BloqueioService.listar(), []);
+export const useListaEspera = () =>
+  usarConsulta(chaves.listaEspera, () => ListaEsperaService.listar(), []);
+export const useNotificacoes = () =>
+  usarConsulta(chaves.notificacoes, () => NotificacaoService.listar(), []);
 export const useLogs = () => usarConsulta(chaves.logs, () => LogService.listar(), []);
 export const useLixeira = () => usarConsulta(chaves.lixeira, () => LixeiraService.listar(), []);
 export const useAdmins = () => usarConsulta(chaves.admins, () => AdminService.listar(), []);
@@ -71,10 +83,30 @@ export function useInvalidar() {
   };
 }
 
+interface OpcoesAcao {
+  sucesso: string;
+  invalidar?: QueryKey[];
+  aoConcluir?: () => void;
+}
+
+/**
+ * Mutação com toast e invalidação de consultas já resolvidos.
+ *
+ * Duas formas de uso:
+ * - sem variáveis: `const salvar = useAcao(async () => {...}, opcoes)`
+ *   ⟶ `salvar.mutate()` (sem argumentos);
+ * - com variáveis: `const excluir = useAcao(async (item) => {...}, opcoes)`
+ *   ⟶ `excluir.mutate(item)`.
+ */
+export function useAcao(
+  executar: () => Promise<unknown>,
+  opcoes: OpcoesAcao,
+): ReturnType<typeof useMutation<unknown, Error, void>>;
 export function useAcao<TVars>(
   executar: (vars: TVars) => Promise<unknown>,
-  opcoes: { sucesso: string; invalidar?: QueryKey[]; aoConcluir?: () => void },
-) {
+  opcoes: OpcoesAcao,
+): ReturnType<typeof useMutation<unknown, Error, TVars>>;
+export function useAcao<TVars>(executar: (vars?: TVars) => Promise<unknown>, opcoes: OpcoesAcao) {
   const invalidar = useInvalidar();
   return useMutation({
     mutationFn: executar,

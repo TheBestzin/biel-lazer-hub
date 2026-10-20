@@ -1,22 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, Ban, Clock, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  format,
-  isSameMonth,
-  startOfMonth,
-  startOfWeek,
-  endOfWeek,
-} from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { PageHeader } from "@/components/app/PageHeader";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
 import { AppBadge } from "@/components/app/AppBadge";
+import { CalendarioAgenda } from "@/components/agenda/CalendarioAgenda";
+import { ItemLista } from "@/components/app/MotionUI";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,9 +36,6 @@ import { BloqueioService, ListaEsperaService } from "@/services/AgendaService";
 import type { MotivoBloqueio } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
 import { mascararTelefone } from "@/utils/documentos";
-import { cn } from "@/lib/utils";
-import { quieto, slideIn } from "@/lib/motion";
-import { ItemLista } from "@/components/app/MotionUI";
 
 export const Route = createFileRoute("/agenda")({
   head: () => ({
@@ -72,8 +61,6 @@ function PaginaAgenda() {
   const { data: bloqueios } = useBloqueios();
   const { data: listaEspera } = useListaEspera();
   const [referencia, setReferencia] = useState(() => new Date());
-  const [direcao, setDirecao] = useState<"esquerda" | "direita">("direita");
-  const reduzir = useReducedMotion();
   const [novaReservaData, setNovaReservaData] = useState<string | null>(null);
   const [bloqueioAberto, setBloqueioAberto] = useState(false);
   const [dadosBloqueio, setDadosBloqueio] = useState<{
@@ -81,12 +68,6 @@ function PaginaAgenda() {
     motivo: MotivoBloqueio;
     descricao: string;
   }>({ data: "", motivo: "familia", descricao: "" });
-
-  const dias = useMemo(() => {
-    const inicio = startOfWeek(startOfMonth(referencia), { locale: ptBR });
-    const fim = endOfWeek(endOfMonth(referencia), { locale: ptBR });
-    return eachDayOfInterval({ start: inicio, end: fim });
-  }, [referencia]);
 
   const mapaReservas = useMemo(() => {
     const mapa = new Map<string, (typeof reservas)[number]>();
@@ -99,6 +80,15 @@ function PaginaAgenda() {
   const mapaBloqueios = useMemo(
     () => new Map(bloqueios.map((bloqueio) => [bloqueio.data, bloqueio])),
     [bloqueios],
+  );
+
+  /** Reservas do mês exibido no calendário. */
+  const reservasDoMes = useMemo(
+    () =>
+      [...mapaReservas.values()]
+        .filter((reserva) => reserva.data.startsWith(format(referencia, "yyyy-MM")))
+        .sort((a, b) => a.data.localeCompare(b.data) || a.entrada.localeCompare(b.entrada)),
+    [mapaReservas, referencia],
   );
 
   const criarBloqueio = useAcao(
@@ -139,101 +129,13 @@ function PaginaAgenda() {
         }
       />
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base capitalize">
-            {format(referencia, "MMMM 'de' yyyy", { locale: ptBR })}
-          </CardTitle>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDirecao("esquerda");
-                setReferencia(addMonths(referencia, -1));
-              }}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDirecao("esquerda");
-                setReferencia(new Date());
-              }}
-            >
-              Hoje
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDirecao("direita");
-                setReferencia(addMonths(referencia, 1));
-              }}
-            >
-              Próximo
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
-            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((dia) => (
-              <div key={dia} className="py-2">
-                {dia}
-              </div>
-            ))}
-          </div>
-          {/* Troca de mês: slide horizontal contínuo — o mês anterior
-              sai na direção oposta à do mês que entra (motion.ts: slideIn). */}
-          <AnimatePresence mode="wait" initial={false} custom={direcao}>
-            <motion.div
-              key={format(referencia, "yyyy-MM")}
-              custom={direcao}
-              variants={reduzir ? quieto.slideIn : slideIn(direcao)}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="grid grid-cols-7 gap-1"
-            >
-              {dias.map((dia) => {
-                const chave = format(dia, "yyyy-MM-dd");
-                const reserva = mapaReservas.get(chave);
-                const bloqueio = mapaBloqueios.get(chave);
-                const doMes = isSameMonth(dia, referencia);
-                return (
-                  <button
-                    key={chave}
-                    type="button"
-                    onClick={() => !bloqueio && !reserva && setNovaReservaData(chave)}
-                    className={cn(
-                      "flex min-h-20 flex-col items-start gap-1 rounded-xl border p-2 text-left transition-colors",
-                      !doMes && "opacity-40",
-                      reserva && "border-primary/40 bg-primary-soft",
-                      bloqueio && "border-destructive/30 bg-destructive/10",
-                      !reserva && !bloqueio && "hover:border-primary/40",
-                    )}
-                    aria-label={`Dia ${format(dia, "dd/MM/yyyy")}`}
-                  >
-                    <span className="text-xs font-semibold tabular-nums">{format(dia, "d")}</span>
-                    {reserva && (
-                      <span className="line-clamp-2 text-[11px] leading-tight font-medium text-primary">
-                        {reserva.clienteNome}
-                      </span>
-                    )}
-                    {bloqueio && (
-                      <span className="text-[11px] leading-tight font-medium text-destructive">
-                        {MOTIVOS_BLOQUEIO[bloqueio.motivo]}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+      <CalendarioAgenda
+        referencia={referencia}
+        aoMudar={(proxima) => setReferencia(proxima)}
+        mapaReservas={mapaReservas}
+        mapaBloqueios={mapaBloqueios}
+        aoNovoDia={setNovaReservaData}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -250,30 +152,37 @@ function PaginaAgenda() {
               />
             ) : (
               <ul className="divide-y">
-                {bloqueios.map((bloqueio, indice) => (
-                  <ItemLista
-                    key={bloqueio.id}
-                    indice={indice}
-                    elemento="li"
-                    className="flex items-center justify-between gap-3 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{formatarData(bloqueio.data)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {MOTIVOS_BLOQUEIO[bloqueio.motivo]}
-                        {bloqueio.descricao ? ` · ${bloqueio.descricao}` : ""}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Remover bloqueio"
-                      onClick={() => removerBloqueio.mutate(bloqueio.id)}
+                {[...bloqueios]
+                  .sort((a, b) => a.data.localeCompare(b.data))
+                  .map((bloqueio, indice) => (
+                    <ItemLista
+                      key={bloqueio.id}
+                      indice={indice}
+                      elemento="li"
+                      className="flex items-center justify-between gap-3 py-3"
                     >
-                      <Trash2 className="size-4 text-destructive" aria-hidden />
-                    </Button>
-                  </ItemLista>
-                ))}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {formatarData(bloqueio.data)}
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {formatarData(bloqueio.data, "EEEE")}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {MOTIVOS_BLOQUEIO[bloqueio.motivo]}
+                          {bloqueio.descricao ? ` · ${bloqueio.descricao}` : ""}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remover bloqueio de ${formatarData(bloqueio.data)}`}
+                        onClick={() => removerBloqueio.mutate(bloqueio.id)}
+                      >
+                        <Trash2 className="size-4 text-destructive" aria-hidden />
+                      </Button>
+                    </ItemLista>
+                  ))}
               </ul>
             )}
           </CardContent>
@@ -292,32 +201,38 @@ function PaginaAgenda() {
               />
             ) : (
               <ul className="divide-y">
-                {listaEspera.map((item, indice) => (
-                  <ItemLista
-                    key={item.id}
-                    indice={indice}
-                    elemento="li"
-                    className="flex items-center justify-between gap-3 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{item.clienteNome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatarData(item.dataDesejada)} · {mascararTelefone(item.telefone)}
-                      </p>
-                    </div>
-                    {item.atendido ? (
-                      <AppBadge tom="success">Atendido</AppBadge>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => atenderEspera.mutate(item.id)}
-                      >
-                        Marcar atendido
-                      </Button>
-                    )}
-                  </ItemLista>
-                ))}
+                {[...listaEspera]
+                  .sort(
+                    (a, b) =>
+                      a.dataDesejada.localeCompare(b.dataDesejada) ||
+                      a.clienteNome.localeCompare(b.clienteNome),
+                  )
+                  .map((item, indice) => (
+                    <ItemLista
+                      key={item.id}
+                      indice={indice}
+                      elemento="li"
+                      className="flex items-center justify-between gap-3 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{item.clienteNome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarData(item.dataDesejada)} · {mascararTelefone(item.telefone)}
+                        </p>
+                      </div>
+                      {item.atendido ? (
+                        <AppBadge tom="success">Atendido</AppBadge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => atenderEspera.mutate(item.id)}
+                        >
+                          Marcar atendido
+                        </Button>
+                      )}
+                    </ItemLista>
+                  ))}
               </ul>
             )}
           </CardContent>
@@ -326,17 +241,26 @@ function PaginaAgenda() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="size-4" aria-hidden />
-            Reservas do mês
+          <CardTitle className="flex items-center justify-between gap-2 text-base">
+            <span className="flex items-center gap-2">
+              <CalendarDays className="size-4" aria-hidden />
+              Reservas do mês
+            </span>
+            <span className="text-xs font-normal tabular-nums text-muted-foreground">
+              {reservasDoMes.length} reserva{reservasDoMes.length === 1 ? "" : "s"}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="divide-y">
-            {[...mapaReservas.values()]
-              .filter((reserva) => reserva.data.startsWith(format(referencia, "yyyy-MM")))
-              .sort((a, b) => a.data.localeCompare(b.data))
-              .map((reserva, indice) => (
+          {reservasDoMes.length === 0 ? (
+            <AppEmptyState
+              icone={CalendarDays}
+              titulo="Mês livre"
+              descricao="Nenhuma reserva agendada para o mês exibido. Os dias livres estão abertos na agenda."
+            />
+          ) : (
+            <ul className="divide-y">
+              {reservasDoMes.map((reserva, indice) => (
                 <ItemLista
                   key={reserva.id}
                   indice={indice}
@@ -354,7 +278,8 @@ function PaginaAgenda() {
                   </span>
                 </ItemLista>
               ))}
-          </ul>
+            </ul>
+          )}
         </CardContent>
       </Card>
 
@@ -418,7 +343,7 @@ function PaginaAgenda() {
               Cancelar
             </Button>
             <Button
-              onClick={() => criarBloqueio.mutate(undefined as never)}
+              onClick={() => criarBloqueio.mutate()}
               disabled={!dadosBloqueio.data || criarBloqueio.isPending}
             >
               Bloquear

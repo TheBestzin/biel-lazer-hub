@@ -10,6 +10,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { addDays } from "date-fns";
+import { z } from "zod";
 
 import { PageHeader } from "@/components/app/PageHeader";
 import { AppEmptyState } from "@/components/app/AppEmptyState";
@@ -24,7 +26,15 @@ import { MensagemGrupoDialog } from "@/components/reservas/MensagemGrupoDialog";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -32,16 +42,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STATUS_PAGAMENTO } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { chaves, useAcao, useReservas } from "@/hooks/useDados";
 import { LogService } from "@/services/LogService";
 import { ReservaService } from "@/services/ReservaService";
 import type { Reserva } from "@/types";
-import { formatarData, formatarMoeda } from "@/utils/formatadores";
+import { chaveDia, formatarData, formatarDataExtenso, formatarMoeda } from "@/utils/formatadores";
+
+/** Filtros da página na URL: compartilháveis pelo endereço e preservados ao voltar. */
+const filtros = z.object({
+  busca: z.string().optional(),
+  aba: z.enum(["todas", "futuras", "finalizadas", "canceladas"]).optional(),
+  pagamento: z.string().optional(),
+});
 
 export const Route = createFileRoute("/reservas")({
+  validateSearch: filtros,
   head: () => ({
     meta: [
       { title: "Reservas — Área de Lazer Biel" },
@@ -56,12 +75,44 @@ export const Route = createFileRoute("/reservas")({
   component: PaginaReservas,
 });
 
+type Abas = NonNullable<z.infer<typeof filtros>["aba"]>;
+
+/** Patch de filtros na URL — `undefined` remove o parâmetro. */
+type PatchSearch = {
+  busca?: string | undefined;
+  aba?: Abas | undefined;
+  pagamento?: string | undefined;
+};
+
+const ABAS: Array<{ valor: Abas; label: string }> = [
+  { valor: "todas", label: "Todas" },
+  { valor: "futuras", label: "Futuras" },
+  { valor: "finalizadas", label: "Finalizadas" },
+  { valor: "canceladas", label: "Canceladas" },
+];
+
+/** Título da seção de um dia: relativo para hoje/amanhã, extenso para o resto. */
+function tituloGrupo(dataISO: string): string {
+  const hoje = chaveDia(new Date());
+  const amanha = chaveDia(addDays(new Date(), 1));
+  if (dataISO === hoje) return "Hoje";
+  if (dataISO === amanha) return "Amanhã";
+  return formatarDataExtenso(dataISO).replace(/^./, (letra) => letra.toUpperCase());
+}
+
 function PaginaReservas() {
   const { admin } = useAuth();
   const { data: reservas, isLoading } = useReservas();
-  const [busca, setBusca] = useState("");
-  const [aba, setAba] = useState("todas");
-  const [filtroPagamento, setFiltroPagamento] = useState("todos");
+  const search = Route.useSearch();
+  const navegar = Route.useNavigate();
+
+  const busca = search.busca ?? "";
+  const aba: Abas = search.aba ?? "todas";
+  const filtroPagamento = search.pagamento ?? "todos";
+
+  const mudarSearch = (patch: PatchSearch) =>
+    void navegar({ search: (anterior) => ({ ...anterior, ...patch }), replace: true });
+
   const [formAberto, setFormAberto] = useState(false);
   const [emEdicao, setEmEdicao] = useState<Reserva | null>(null);
   const [contrato, setContrato] = useState<Reserva | null>(null);
@@ -69,22 +120,6 @@ function PaginaReservas() {
   const [paraCancelar, setParaCancelar] = useState<Reserva | null>(null);
   const [paraExcluir, setParaExcluir] = useState<Reserva | null>(null);
   const [mensagemAberta, setMensagemAberta] = useState(false);
-
-  const filtradas = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    const hoje = new Date().toISOString().slice(0, 10);
-    return reservas
-      .filter((reserva) => {
-        if (aba === "futuras") return reserva.data >= hoje && reserva.statusReserva === "reservada";
-        if (aba === "finalizadas") return reserva.statusReserva === "finalizada";
-        if (aba === "canceladas") return reserva.statusReserva === "cancelada";
-        return true;
-      })
-      .filter((reserva) =>
-        filtroPagamento === "todos" ? true : reserva.statusPagamento === filtroPagamento,
-      )
-      .filter((reserva) => !termo || reserva.clienteNome.toLowerCase().includes(termo));
-  }, [reservas, aba, filtroPagamento, busca]);
 
   const cancelar = useAcao(
     async (reserva: Reserva) => {
@@ -128,6 +163,61 @@ function PaginaReservas() {
     },
   );
 
+  /** Contagem por aba — reflete os filtros, menos a própria aba. */
+  const contagens = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const hoje = chaveDia(new Date());
+    const base = reservas
+      .filter((reserva) =>
+        filtroPagamento === "todos" ? true : reserva.statusPagamento === filtroPagamento,
+      )
+      .filter((reserva) => !termo || reserva.clienteNome.toLowerCase().includes(termo));
+    return {
+      todas: base.length,
+      futuras: base.filter((r) => r.data >= hoje && r.statusReserva === "reservada").length,
+      finalizadas: base.filter((r) => r.statusReserva === "finalizada").length,
+      canceladas: base.filter((r) => r.statusReserva === "cancelada").length,
+    };
+  }, [reservas, filtroPagamento, busca]);
+
+  const filtradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const hoje = chaveDia(new Date());
+    return reservas
+      .filter((reserva) => {
+        if (aba === "futuras") return reserva.data >= hoje && reserva.statusReserva === "reservada";
+        if (aba === "finalizadas") return reserva.statusReserva === "finalizada";
+        if (aba === "canceladas") return reserva.statusReserva === "cancelada";
+        return true;
+      })
+      .filter((reserva) =>
+        filtroPagamento === "todos" ? true : reserva.statusPagamento === filtroPagamento,
+      )
+      .filter((reserva) => !termo || reserva.clienteNome.toLowerCase().includes(termo))
+      .sort(
+        (a, b) =>
+          a.data.localeCompare(b.data) ||
+          a.entrada.localeCompare(b.entrada) ||
+          a.clienteNome.localeCompare(b.clienteNome),
+      );
+  }, [reservas, aba, filtroPagamento, busca]);
+
+  /** Agrupadas por dia, mantendo a ordenação. */
+  const grupos = useMemo(() => {
+    const mapa = new Map<string, Reserva[]>();
+    filtradas.forEach((reserva) => {
+      const lista = mapa.get(reserva.data) ?? [];
+      lista.push(reserva);
+      mapa.set(reserva.data, lista);
+    });
+    return Array.from(mapa.entries());
+  }, [filtradas]);
+
+  const abrirNova = () => {
+    setEmEdicao(null);
+    setFormAberto(true);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -139,12 +229,7 @@ function PaginaReservas() {
               <MessageCircle className="size-4" aria-hidden />
               Mensagem do grupo
             </Button>
-            <Button
-              onClick={() => {
-                setEmEdicao(null);
-                setFormAberto(true);
-              }}
-            >
+            <Button onClick={abrirNova}>
               <CalendarPlus className="size-4" aria-hidden />
               Nova reserva
             </Button>
@@ -154,15 +239,7 @@ function PaginaReservas() {
 
       <LembretesPagamento />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <Tabs value={aba} onValueChange={setAba} className="lg:w-auto">
-          <TabsList>
-            <TabsTrigger value="todas">Todas</TabsTrigger>
-            <TabsTrigger value="futuras">Futuras</TabsTrigger>
-            <TabsTrigger value="finalizadas">Finalizadas</TabsTrigger>
-            <TabsTrigger value="canceladas">Canceladas</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -172,12 +249,15 @@ function PaginaReservas() {
             className="pl-9"
             placeholder="Buscar por cliente"
             value={busca}
-            onChange={(evento) => setBusca(evento.target.value)}
+            onChange={(evento) => mudarSearch({ busca: evento.target.value || undefined })}
             aria-label="Buscar reservas"
           />
         </div>
-        <Select value={filtroPagamento} onValueChange={setFiltroPagamento}>
-          <SelectTrigger className="lg:w-52" aria-label="Filtrar por pagamento">
+        <Select
+          value={filtroPagamento}
+          onValueChange={(valor) => mudarSearch({ pagamento: valor })}
+        >
+          <SelectTrigger className="sm:w-52" aria-label="Filtrar por pagamento">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -191,6 +271,19 @@ function PaginaReservas() {
         </Select>
       </div>
 
+      <Tabs value={aba} onValueChange={(valor) => mudarSearch({ aba: valor as Abas })}>
+        <TabsList>
+          {ABAS.map((item) => (
+            <TabsTrigger key={item.valor} value={item.valor}>
+              {item.label}
+              <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">
+                {contagens[item.valor]}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       <TransicaoEstado
         estado={isLoading ? "carregando" : filtradas.length === 0 ? "vazio" : "pronto"}
       >
@@ -201,70 +294,114 @@ function PaginaReservas() {
             icone={CalendarPlus}
             titulo="Nenhuma reserva encontrada"
             descricao="Ajuste os filtros ou registre uma nova locação."
-            acao={{
-              label: "Nova reserva",
-              aoClicar: () => {
-                setEmEdicao(null);
-                setFormAberto(true);
-              },
-            }}
+            acao={{ label: "Nova reserva", aoClicar: abrirNova }}
           />
         ) : (
-          <div className="space-y-3">
-            {filtradas.map((reserva, indice) => (
-              <ItemLista key={reserva.id} indice={indice}>
-                <Card>
-                  <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">{reserva.clienteNome}</p>
-                        <BadgeStatusReserva status={reserva.statusReserva} />
-                        <BadgeStatusPagamento status={reserva.statusPagamento} />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida} ·{" "}
-                        {formatarMoeda(reserva.valor)} (pago {formatarMoeda(reserva.valorPago)})
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setContrato(reserva)}>
-                        <FileText className="size-3.5" aria-hidden />
-                        Contrato
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setChecklist(reserva)}>
-                        <CheckSquare className="size-3.5" aria-hidden />
-                        Checklist
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEmEdicao(reserva);
-                          setFormAberto(true);
-                        }}
-                      >
-                        <Pencil className="size-3.5" aria-hidden />
-                        Editar
-                      </Button>
-                      {reserva.statusReserva === "reservada" && (
-                        <Button variant="ghost" size="sm" onClick={() => setParaCancelar(reserva)}>
-                          <XCircle className="size-3.5" aria-hidden />
-                          Cancelar
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setParaExcluir(reserva)}
-                      >
-                        <Trash2 className="size-3.5" aria-hidden />
-                        Excluir
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ItemLista>
+          <div className="space-y-6">
+            {grupos.map(([data, itens], indiceGrupo) => (
+              <section key={data} className="space-y-2" aria-label={tituloGrupo(data)}>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                    {tituloGrupo(data)}
+                  </h3>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {itens.length} reserva{itens.length === 1 ? "" : "s"}
+                  </span>
+                  <div className="h-px flex-1 bg-border" aria-hidden />
+                </div>
+
+                {/* Mobile: lista de cards */}
+                <ul className="space-y-2 md:hidden">
+                  {itens.map((reserva, indice) => (
+                    <ItemLista key={reserva.id} indice={indice + indiceGrupo * itens.length}>
+                      <li>
+                        <Card>
+                          <CardContent className="space-y-3 p-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium">{reserva.clienteNome}</p>
+                              <BadgeStatusReserva status={reserva.statusReserva} />
+                              <BadgeStatusPagamento status={reserva.statusPagamento} />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {formatarData(reserva.data)} · {reserva.entrada}–{reserva.saida} ·{" "}
+                              {formatarMoeda(reserva.valor)}
+                              {reserva.statusPagamento !== "pago" && (
+                                <span className="ml-1 text-warning">
+                                  (falta {formatarMoeda(reserva.valor - reserva.valorPago)})
+                                </span>
+                              )}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setContrato(reserva)}
+                              >
+                                <FileText className="size-3.5" aria-hidden />
+                                Contrato
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setChecklist(reserva)}
+                              >
+                                <CheckSquare className="size-3.5" aria-hidden />
+                                Checklist
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEmEdicao(reserva);
+                                  setFormAberto(true);
+                                }}
+                              >
+                                <Pencil className="size-3.5" aria-hidden />
+                                Editar
+                              </Button>
+                              {reserva.statusReserva === "reservada" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setParaCancelar(reserva)}
+                                >
+                                  <XCircle className="size-3.5" aria-hidden />
+                                  Cancelar
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setParaExcluir(reserva)}
+                              >
+                                <Trash2 className="size-3.5" aria-hidden />
+                                Excluir
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </li>
+                    </ItemLista>
+                  ))}
+                </ul>
+
+                {/* Desktop: tabela por grupo */}
+                <div className="hidden md:block">
+                  <TabelaGrupo
+                    reservas={itens}
+                    baseIndice={indiceGrupo * itens.length}
+                    aoContrato={setContrato}
+                    aoChecklist={setChecklist}
+                    aoEditar={(reserva) => {
+                      setEmEdicao(reserva);
+                      setFormAberto(true);
+                    }}
+                    aoCancelar={setParaCancelar}
+                    aoExcluir={setParaExcluir}
+                  />
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -309,5 +446,138 @@ function PaginaReservas() {
         aoConfirmar={() => paraExcluir && excluir.mutate(paraExcluir)}
       />
     </div>
+  );
+}
+
+function TabelaGrupo({
+  reservas,
+  baseIndice,
+  aoContrato,
+  aoChecklist,
+  aoEditar,
+  aoCancelar,
+  aoExcluir,
+}: {
+  reservas: Reserva[];
+  baseIndice: number;
+  aoContrato: (reserva: Reserva) => void;
+  aoChecklist: (reserva: Reserva) => void;
+  aoEditar: (reserva: Reserva) => void;
+  aoCancelar: (reserva: Reserva) => void;
+  aoExcluir: (reserva: Reserva) => void;
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="min-w-40">Cliente</TableHead>
+          <TableHead className="w-[11rem]">Data</TableHead>
+          <TableHead className="w-[9rem]">Valor</TableHead>
+          <TableHead className="w-[11rem]">Status</TableHead>
+          <TableHead className="w-[13rem] text-right">Ações</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {reservas.map((reserva, indice) => (
+          <ItemLista key={reserva.id} indice={baseIndice + indice} elemento="tr">
+            <TableRow className="bg-transparent transition-colors duration-150 hover:bg-primary-soft/40">
+              <TableCell className="font-medium">{reserva.clienteNome}</TableCell>
+              <TableCell className="whitespace-nowrap text-muted-foreground">
+                <span className="mr-2 text-foreground">{formatarData(reserva.data)}</span>
+                {reserva.entrada}–{reserva.saida}
+              </TableCell>
+              <TableCell className="tabular-nums">
+                <span className="font-semibold">{formatarMoeda(reserva.valor)}</span>
+                {reserva.statusPagamento !== "pago" && (
+                  <span className="ml-1 text-xs text-warning">
+                    falta {formatarMoeda(reserva.valor - reserva.valorPago)}
+                  </span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col items-start gap-1">
+                  <BadgeStatusReserva status={reserva.statusReserva} />
+                  <BadgeStatusPagamento status={reserva.statusPagamento} />
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <BotaoIcone
+                    titulo="Contrato"
+                    ariaLabel={`Contrato de ${reserva.clienteNome}`}
+                    onClick={() => aoContrato(reserva)}
+                  >
+                    <FileText className="size-4" aria-hidden />
+                  </BotaoIcone>
+                  <BotaoIcone
+                    titulo="Checklist"
+                    ariaLabel={`Checklist de ${reserva.clienteNome}`}
+                    onClick={() => aoChecklist(reserva)}
+                  >
+                    <CheckSquare className="size-4" aria-hidden />
+                  </BotaoIcone>
+                  <BotaoIcone
+                    titulo="Editar"
+                    ariaLabel={`Editar reserva de ${reserva.clienteNome}`}
+                    onClick={() => aoEditar(reserva)}
+                  >
+                    <Pencil className="size-4" aria-hidden />
+                  </BotaoIcone>
+                  {reserva.statusReserva === "reservada" && (
+                    <BotaoIcone
+                      titulo="Cancelar reserva"
+                      ariaLabel={`Cancelar reserva de ${reserva.clienteNome}`}
+                      classe="text-warning hover:text-warning"
+                      onClick={() => aoCancelar(reserva)}
+                    >
+                      <XCircle className="size-4" aria-hidden />
+                    </BotaoIcone>
+                  )}
+                  <BotaoIcone
+                    titulo="Excluir"
+                    ariaLabel={`Excluir reserva de ${reserva.clienteNome}`}
+                    classe="text-destructive hover:text-destructive"
+                    onClick={() => aoExcluir(reserva)}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </BotaoIcone>
+                </div>
+              </TableCell>
+            </TableRow>
+          </ItemLista>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function BotaoIcone({
+  titulo,
+  ariaLabel,
+  classe,
+  onClick,
+  children,
+}: {
+  titulo: string;
+  ariaLabel: string;
+  classe?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`size-8 rounded-full ${classe ?? ""}`}
+          onClick={onClick}
+          aria-label={ariaLabel}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{titulo}</TooltipContent>
+    </Tooltip>
   );
 }

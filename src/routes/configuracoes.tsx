@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Save, Settings, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Building2, CircleAlert, Loader2, Save, Settings, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { AppBadge } from "@/components/app/AppBadge";
@@ -9,15 +9,17 @@ import { CampoMoeda, CampoTelefone } from "@/components/app/CamposMascarados";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { CARGOS } from "@/constants";
 import { chaves, useAcao, useAdmins, useConfiguracoes } from "@/hooks/useDados";
 import { ConfiguracaoService } from "@/services/ConfiguracaoService";
 import { LogService } from "@/services/LogService";
 import type { Configuracoes } from "@/types";
-import { formatarDataHora } from "@/utils/formatadores";
+import { formatarDataHora, iniciais } from "@/utils/formatadores";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -36,7 +38,7 @@ export const Route = createFileRoute("/configuracoes")({
 
 function PaginaConfiguracoes() {
   const { admin } = useAuth();
-  const { data: configuracoes } = useConfiguracoes();
+  const { data: configuracoes, isLoading } = useConfiguracoes();
   const { data: admins } = useAdmins();
   const [form, setForm] = useState<Partial<Configuracoes>>({});
 
@@ -46,6 +48,17 @@ function PaginaConfiguracoes() {
 
   const atualizar = <C extends keyof Configuracoes>(campo: C, valor: Configuracoes[C]) =>
     setForm((atual) => ({ ...atual, [campo]: valor }));
+
+  /** Indicador de alterações não salvas (comparação estável: mesma origem). */
+  const sujo = useMemo(
+    () =>
+      configuracoes !== undefined &&
+      configuracoes !== null &&
+      JSON.stringify(form) !== JSON.stringify(configuracoes),
+    [form, configuracoes],
+  );
+
+  const descartar = () => setForm(configuracoes ?? {});
 
   const salvar = useAcao(
     async () => {
@@ -59,26 +72,27 @@ function PaginaConfiguracoes() {
         descricao: "Atualizou as configurações do sistema",
       });
     },
-    { sucesso: "Configurações salvas.", invalidar: [chaves.configuracoes, chaves.logs] },
+    {
+      sucesso: "Configurações salvas.",
+      invalidar: [chaves.configuracoes, chaves.logs],
+    },
   );
 
   return (
     <div className="space-y-6">
       <PageHeader
         titulo="Configurações"
-        descricao="Dados da empresa, padrões de reserva e modelo de contrato."
-        acoes={
-          <Button onClick={() => salvar.mutate(undefined as never)} disabled={salvar.isPending}>
-            {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            Salvar alterações
-          </Button>
+        descricao={
+          isLoading
+            ? "Carregando preferências..."
+            : "Dados da empresa, padrões de reserva e modelo de contrato."
         }
       />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className="size-4" aria-hidden /> Dados gerais
+            <Building2 className="size-4" aria-hidden /> Dados da empresa
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -106,6 +120,16 @@ function PaginaConfiguracoes() {
               onChange={(valor) => atualizar("whatsapp", valor)}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings className="size-4" aria-hidden /> Padrões de reserva
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="valorPadrao">Valor padrão da diária</Label>
             <CampoMoeda
@@ -115,7 +139,7 @@ function PaginaConfiguracoes() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="entradaPadrao">Horário de entrada padrão</Label>
+            <Label htmlFor="entradaPadrao">Entrada padrão</Label>
             <Input
               id="entradaPadrao"
               type="time"
@@ -124,7 +148,7 @@ function PaginaConfiguracoes() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="saidaPadrao">Horário de saída padrão</Label>
+            <Label htmlFor="saidaPadrao">Saída padrão</Label>
             <Input
               id="saidaPadrao"
               type="time"
@@ -157,6 +181,11 @@ function PaginaConfiguracoes() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="size-4" aria-hidden /> Equipe com acesso
+            {admins.length > 0 && (
+              <span className="text-xs font-normal tabular-nums text-muted-foreground">
+                {admins.length} membro{admins.length === 1 ? "" : "s"}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -167,31 +196,63 @@ function PaginaConfiguracoes() {
               descricao="Membros da equipe com acesso aparecem aqui."
             />
           ) : (
-            admins.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card/60 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.nome}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.email}
-                    {item.ultimoLogin
-                      ? ` · último acesso ${formatarDataHora(item.ultimoLogin)}`
-                      : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <AppBadge tom="info">{CARGOS[item.cargo]}</AppBadge>
-                  <AppBadge tom={item.ativo ? "success" : "destructive"}>
-                    {item.ativo ? "Ativo" : "Inativo"}
-                  </AppBadge>
-                </div>
-              </div>
-            ))
+            <ul className="space-y-2">
+              {admins.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border bg-card/60 px-4 py-3"
+                >
+                  <Avatar className="size-9">
+                    <AvatarFallback className="bg-primary-soft text-xs font-semibold text-primary">
+                      {iniciais(item.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.nome}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.email}
+                      {item.ultimoLogin
+                        ? ` · último acesso ${formatarDataHora(item.ultimoLogin)}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AppBadge tom="info">{CARGOS[item.cargo]}</AppBadge>
+                    <AppBadge tom={item.ativo ? "success" : "destructive"}>
+                      {item.ativo ? "Ativo" : "Inativo"}
+                    </AppBadge>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
+
+      {/* Barra fixa de alterações não salvas */}
+      {sujo && (
+        <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card/95 px-4 py-3 shadow-elegant backdrop-blur">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <CircleAlert className="size-4 text-warning" aria-hidden />
+            Alterações não salvas
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={descartar} disabled={salvar.isPending}>
+              Descartar
+            </Button>
+            <Button size="sm" onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+              {salvar.isPending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-4" aria-hidden />
+              )}
+              Salvar alterações
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Separator className="bg-transparent" />
     </div>
   );
 }
