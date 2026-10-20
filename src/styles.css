@@ -77,7 +77,8 @@
   --shadow-card: 0 1px 3px oklch(0.2 0.03 240 / 0.06), 0 8px 24px -12px oklch(0.2 0.03 240 / 0.14);
   --shadow-elevated:
     0 2px 6px oklch(0.2 0.03 240 / 0.06), 0 16px 44px -16px oklch(0.2 0.03 240 / 0.2);
-  --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);  --shadow-glow: 0 10px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent);
+  --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);
+  --shadow-glow: 0 10px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
 :root {
@@ -162,22 +163,24 @@
     );
   --glass-bg: color-mix(in oklab, var(--card) 74%, transparent);
   --glass-border: color-mix(in oklab, var(--primary) 18%, transparent);
+  /* Destaque (card principal): azul-petróleo, texto branco ≥ 4.5:1 em todo o gradiente. */
+  --gradient-destaque: linear-gradient(135deg, oklch(0.42 0.085 212), oklch(0.27 0.055 232));
 }
 
 .dark {
   /* Deep Pool (escuro) */
-  --background: oklch(0.203 0.032 233.7);
+  --background: oklch(0.18 0.025 235); /* #07141C petróleo profundo */
   --foreground: oklch(0.976 0.02 212.5);
-  --card: oklch(0.251 0.042 234.6);
+  --card: oklch(0.23 0.032 236); /* #0C1E28 superfície */
   --card-foreground: oklch(0.976 0.02 212.5);
-  --popover: oklch(0.251 0.042 234.6);
+  --popover: oklch(0.23 0.032 236);
   --popover-foreground: oklch(0.976 0.02 212.5);
 
-  --primary: oklch(0.816 0.145 216.5);
-  --primary-foreground: oklch(0.203 0.032 233.7);
+  --primary: oklch(0.79 0.135 211); /* #22D3EE marca */
+  --primary-foreground: oklch(0.18 0.025 235);
   --primary-soft: oklch(0.33 0.06 220);
 
-  --secondary: oklch(0.3 0.05 232);
+  --secondary: oklch(0.28 0.04 234);
   --secondary-foreground: oklch(0.95 0.02 212);
 
   --nature: oklch(0.819 0.18 159.8);
@@ -187,22 +190,22 @@
   --wood: oklch(0.883 0.165 92.2);
   --wood-foreground: oklch(0.22 0.05 90);
 
-  --muted: oklch(0.3 0.045 232);
-  --muted-foreground: oklch(0.78 0.035 214);
+  --muted: oklch(0.28 0.04 234);
+  --muted-foreground: oklch(0.8 0.03 214); /* ≥ 7:1 sobre --card */
   --accent: oklch(0.34 0.062 225);
   --accent-foreground: oklch(0.95 0.03 210);
 
-  --destructive: oklch(0.683 0.207 19);
-  --destructive-foreground: oklch(0.98 0.01 20);
-  --success: oklch(0.819 0.18 159.8);
-  --success-foreground: oklch(0.2 0.04 160);
-  --warning: oklch(0.883 0.165 92.2);
-  --warning-foreground: oklch(0.22 0.05 90);
+  --destructive: oklch(0.73 0.165 22); /* #F87171 */
+  --destructive-foreground: oklch(0.17 0.03 20);
+  --success: oklch(0.79 0.15 166); /* #34D399 */
+  --success-foreground: oklch(0.18 0.03 165);
+  --warning: oklch(0.86 0.165 85); /* #FBBF24 */
+  --warning-foreground: oklch(0.2 0.04 85);
   --info: oklch(0.641 0.197 253);
   --info-foreground: oklch(0.98 0.01 240);
 
-  --border: oklch(0.378 0.062 228.6);
-  --input: oklch(0.378 0.062 228.6);
+  --border: oklch(0.36 0.045 232);
+  --input: oklch(0.36 0.045 232);
   --ring: oklch(0.816 0.145 216.5);
 
   --chart-1: oklch(0.816 0.145 216.5);
@@ -211,16 +214,16 @@
   --chart-4: oklch(0.641 0.197 253);
   --chart-5: oklch(0.683 0.207 19);
 
-  --sidebar: oklch(0.228 0.038 234);
+  --sidebar: oklch(0.2 0.03 235);
   --sidebar-foreground: oklch(0.96 0.02 212);
   --sidebar-primary: oklch(0.816 0.145 216.5);
   --sidebar-primary-foreground: oklch(0.203 0.032 233.7);
   --sidebar-accent: oklch(0.31 0.055 228);
   --sidebar-accent-foreground: oklch(0.95 0.02 212);
-  --sidebar-border: oklch(0.378 0.062 228.6);
+  --sidebar-border: oklch(0.36 0.045 232);
   --sidebar-ring: oklch(0.816 0.145 216.5);
 
-  --gradient-brand: linear-gradient(135deg, oklch(0.868 0.16 178.2), oklch(0.816 0.145 216.5));
+  --gradient-brand: linear-gradient(135deg, oklch(0.868 0.16 178.2), oklch(0.79 0.135 211));
   --gradient-surface: linear-gradient(
     180deg,
     color-mix(in oklab, var(--primary) 10%, transparent),
@@ -242,7 +245,7 @@
       color-mix(in oklab, var(--info) 12%, transparent),
       transparent 75%
     );
-  --glass-bg: color-mix(in oklab, var(--card) 66%, transparent);
+  --glass-bg: color-mix(in oklab, var(--card) 72%, transparent);
   --glass-border: color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
@@ -284,6 +287,10 @@
 
 @utility brand-gradient {
   background-image: var(--gradient-brand);
+}
+
+@utility destaque-gradient {
+  background-image: var(--gradient-destaque);
 }
 
 @utility text-brand-gradient {
@@ -353,8 +360,7 @@
     box-shadow: 0 12px 32px -14px color-mix(in oklab, var(--primary) 35%, transparent);
   }
   50% {
-    box-shadow:
-      0 14px 36px -12px color-mix(in oklab, var(--primary) 55%, transparent);
+    box-shadow: 0 14px 36px -12px color-mix(in oklab, var(--primary) 55%, transparent);
   }
 }
 
@@ -697,9 +703,25 @@ html {
   }
 }
 @keyframes logo-entrada {
-  0% { opacity: 0; transform: scale(0.4) rotate(-25deg); }
-  60% { opacity: 1; transform: scale(1.12) rotate(6deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); }
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-25deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
 }
-.logo-entrada { animation: logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: center; }
-@media (prefers-reduced-motion: reduce) { .logo-entrada { animation: none; } }
+.logo-entrada {
+  animation: logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-entrada {
+    animation: none;
+  }
+}

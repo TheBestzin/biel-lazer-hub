@@ -9,7 +9,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addDays } from "date-fns";
 import { z } from "zod";
 
@@ -55,6 +55,8 @@ import { chaveDia, formatarData, formatarDataExtenso, formatarMoeda } from "@/ut
 /** Filtros da página na URL: compartilháveis pelo endereço e preservados ao voltar. */
 const filtros = z.object({
   busca: z.string().optional(),
+  /** Abre direto a reserva indicada (usado pela busca global e pelo mapa da agenda). */
+  reserva: z.string().optional(),
   aba: z.enum(["todas", "futuras", "finalizadas", "canceladas"]).optional(),
   pagamento: z.string().optional(),
 });
@@ -109,6 +111,17 @@ function PaginaReservas() {
   const busca = search.busca ?? "";
   const aba: Abas = search.aba ?? "todas";
   const filtroPagamento = search.pagamento ?? "todos";
+
+  // Deep-link ?reserva=id: abre a reserva assim que os dados chegam e limpa o parâmetro.
+  useEffect(() => {
+    if (!search.reserva || reservas.length === 0) return;
+    const alvo = reservas.find((reserva) => reserva.id === search.reserva);
+    if (alvo) {
+      setEmEdicao(alvo);
+      setFormAberto(true);
+    }
+    void navegar({ search: (anterior) => ({ ...anterior, reserva: undefined }), replace: true });
+  }, [search.reserva, reservas, navegar]);
 
   const mudarSearch = (patch: PatchSearch) =>
     void navegar({ search: (anterior) => ({ ...anterior, ...patch }), replace: true });

@@ -1,10 +1,10 @@
 import {
-  BarChart3,
   Bell,
   CalendarDays,
-  ClipboardList,
-  Layout,
+  ChartNoAxesCombined,
+  ScrollText,
   Settings,
+  Ticket,
   Trash2,
   Users,
   Wallet,
@@ -25,20 +25,21 @@ export interface GrupoNavegacao {
 
 /**
  * Itens em ordem plana — consumido pela paleta de comandos (⌘K).
+ * Cada seção tem ícone próprio: nenhum ícone se repete no menu.
  */
 export const NAVEGACAO: ItemNavegacao[] = [
   { para: "/clientes", label: "Clientes", icone: Users, descricao: "Cadastro e histórico" },
-  { para: "/reservas", label: "Reservas", icone: ClipboardList, descricao: "Locações e checklist" },
+  { para: "/reservas", label: "Reservas", icone: Ticket, descricao: "Locações e checklist" },
   { para: "/agenda", label: "Agenda", icone: CalendarDays, descricao: "Calendário e bloqueios" },
   { para: "/financeiro", label: "Financeiro", icone: Wallet, descricao: "Receitas e despesas" },
   {
     para: "/relatorios",
     label: "Relatórios",
-    icone: BarChart3,
+    icone: ChartNoAxesCombined,
     descricao: "Indicadores e gráficos",
   },
   { para: "/notificacoes", label: "Notificações", icone: Bell, descricao: "Alertas do sistema" },
-  { para: "/auditoria", label: "Auditoria", icone: ClipboardList, descricao: "Registro de ações" },
+  { para: "/auditoria", label: "Auditoria", icone: ScrollText, descricao: "Registro de ações" },
   { para: "/lixeira", label: "Lixeira", icone: Trash2, descricao: "Itens removidos" },
   {
     para: "/configuracoes",
@@ -48,34 +49,29 @@ export const NAVEGACAO: ItemNavegacao[] = [
   },
 ];
 
+/** Busca um item pelo caminho — evita índices frágeis ao reorganizar o menu. */
+function item(para: string): ItemNavegacao {
+  const encontrado = NAVEGACAO.find((entrada) => entrada.para === para);
+  if (!encontrado) throw new Error(`Item de navegação inexistente: ${para}`);
+  return encontrado;
+}
+
 /**
  * Sidebar agrupada por função: Operação (dia a dia),
  * Gestão (dinheiro e análise) e Sistema (controle e preferências).
+ * Cada item aparece em exatamente um grupo.
  */
 export const GRUPOS_NAVEGACAO: GrupoNavegacao[] = [
   {
     rotulo: "Operação",
-    itens: [
-      NAVEGACAO[0]!, // Clientes
-      NAVEGACAO[1]!, // Reservas
-      NAVEGACAO[2]!, // Agenda
-    ],
+    itens: [item("/clientes"), item("/reservas"), item("/agenda")],
   },
   {
     rotulo: "Gestão",
-    itens: [
-      NAVEGACAO[0]!, // Clientes (agora índice 0 após remoção do Dashboard)
-      NAVEGACAO[2]!, // Financeiro (índice 2: financeiro era 3, agora 2 após remoção)
-      NAVEGACAO[3]!, // Relatórios (índice 3: relatórios era 4, agora 3 após remoção)
-    ],
+    itens: [item("/financeiro"), item("/relatorios")],
   },
   {
     rotulo: "Sistema",
-    itens: [
-      NAVEGACAO[4]!, // Notificações (índice 4: notificações era 5, agora 4 após remoção do Dashboard)
-      NAVEGACAO[5]!, // Auditoria (índice 5: auditoria era 6, agora 5 após remoção)
-      NAVEGACAO[6]!, // Lixeira (índice 6: lixeira era 7, agora 6 após remoção)
-      NAVEGACAO[7]!, // Configurações (índice 7: configurações era 8, agora 7 após remoção)
-    ],
+    itens: [item("/notificacoes"), item("/auditoria"), item("/lixeira"), item("/configuracoes")],
   },
 ];

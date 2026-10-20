@@ -50,9 +50,9 @@ export function AppStatCard({
       initial="initial"
       animate="animate"
       className={cn(
-        "group card-hover relative overflow-hidden rounded-[20px] border p-5",
+        "group card-hover relative overflow-hidden rounded-2xl border p-5",
         destaque
-          ? "flex flex-col border-white/10 shadow-elegant brand-gradient text-primary-foreground"
+          ? "flex flex-col border-white/10 shadow-elegant destaque-gradient text-white"
           : "bg-card shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
         className,
@@ -71,12 +71,19 @@ export function AppStatCard({
         />
       )}
       <div className="relative flex items-start justify-between gap-3">
-        <p className="font-sans font-medium text-muted-foreground leading-relaxed">{titulo}</p>
+        <p
+          className={cn(
+            "font-sans font-medium leading-relaxed",
+            destaque ? "text-white/85" : "text-muted-foreground",
+          )}
+        >
+          {titulo}
+        </p>
         <span
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
             destaque
-              ? "bg-white/15 text-primary-foreground ring-1 ring-white/25"
+              ? "bg-white/15 text-white ring-1 ring-white/25"
               : "bg-primary-soft text-primary ring-1 ring-primary/10",
           )}
         >
@@ -85,7 +92,7 @@ export function AppStatCard({
       </div>
       <p
         className={cn(
-          "font-sans relative font-bold tracking-tight lining-nums tabular-nums font-variant-numeric: tabular-nums;",
+          "font-sans relative font-bold tracking-tight lining-nums tabular-nums",
           destaque ? "mt-auto text-[2rem]" : "mt-3 text-[1.5rem]",
         )}
       >
@@ -95,15 +102,15 @@ export function AppStatCard({
           valor
         )}
       </p>
-      <div className="mt-2 flex items-center gap-2 text-sm">
+      <div className={cn("mt-2 flex items-center gap-2 text-sm", destaque && "text-white/85")}>
         {typeof variacao === "number" && (
           <span
             className={cn(
               "inline-flex items-center gap-0.5",
               destaque
-                ? "rounded-full bg-white/90 px-2 py-0.5 font-medium text-primary-foreground"
+                ? "rounded-full bg-white/15 px-2 py-0.5 font-semibold text-white ring-1 ring-white/25"
                 : "font-medium",
-              positiva ? "text-success" : "text-destructive",
+              !destaque && (positiva ? "text-success" : "text-destructive"),
             )}
           >
             {positiva ? (

@@ -63,7 +63,7 @@ export function SinoNotificacoes() {
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 22 }}
-              className="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-destructive px-1 text-[0.6rem] leading-4 font-bold text-destructive-foreground"
+              className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-muted px-1 text-[0.6rem] leading-4 font-semibold text-muted-foreground tabular-nums ring-2 ring-background"
             >
               {naoLidas.length > 9 ? "9+" : naoLidas.length}
             </motion.span>

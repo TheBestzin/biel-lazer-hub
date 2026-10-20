@@ -35,13 +35,16 @@ function usarItemAtivo(para: string, caminho: string): boolean {
 }
 
 /* ------------------------------------------------------------------ */
-/* Rail de ícones (desktop): estreito, só ícones, ativo destacado.     */
+/* Rail de ícones (desktop): só ícones até xl; a partir de xl, com nome. */
 /* ------------------------------------------------------------------ */
 
 function RotaLateral() {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
   return (
-    <nav className="flex flex-col items-center gap-1.5" aria-label="Navegação principal">
+    <nav
+      className="flex flex-col items-center gap-1.5 xl:items-stretch xl:px-3"
+      aria-label="Navegação principal"
+    >
       {NAVEGACAO.map((item) => {
         const ativo = usarItemAtivo(item.para, caminho);
         return (
@@ -52,23 +55,25 @@ function RotaLateral() {
                 aria-label={item.label}
                 aria-current={ativo ? "page" : undefined}
                 className={cn(
-                  "group relative grid size-11 place-items-center rounded-2xl transition-all duration-200",
+                  "group relative grid size-11 place-items-center rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "xl:flex xl:h-11 xl:w-full xl:place-items-none xl:items-center xl:justify-start xl:gap-3 xl:px-3",
                   ativo
                     ? "bg-primary-soft text-primary shadow-soft"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  !ativo && "hover:scale-105",
+                  !ativo && "hover:scale-105 xl:hover:translate-x-0.5 xl:hover:scale-100",
                 )}
               >
                 <item.icone
                   className={cn(
-                    "size-[1.15rem] transition-transform duration-200",
+                    "size-[1.15rem] shrink-0 transition-transform duration-200",
                     !ativo && "group-hover:scale-110",
                   )}
                   aria-hidden
                 />
+                <span className="hidden truncate text-sm font-medium xl:inline">{item.label}</span>
                 <span
                   className={cn(
-                    "absolute -top-1 left-1/2 h-4 w-1 -translate-x-1/2 rounded-full brand-gradient transition-opacity",
+                    "absolute -top-1 left-1/2 h-4 w-1 -translate-x-1/2 rounded-full brand-gradient transition-opacity xl:top-1/2 xl:-left-3 xl:h-6 xl:-translate-y-1/2 xl:translate-x-0 xl:rounded-r-full xl:rounded-l-none",
                     ativo ? "opacity-100" : "opacity-0",
                   )}
                   aria-hidden
@@ -145,7 +150,7 @@ function PilastraNavegacao() {
   const maisAtivo = MAIS.some((item) => usarItemAtivo(item.para, caminho));
   return (
     <nav
-      className="hidden min-w-0 flex-1 items-center justify-center gap-1 self-center rounded-full border border-border/60 bg-card/50 p-1 backdrop-blur lg:flex"
+      className="hidden shrink-0 items-center justify-center gap-1 self-center rounded-full border border-border/60 bg-card/50 p-1 backdrop-blur lg:flex"
       aria-label="Seções principais"
     >
       {PILULAS.map((item) => {
@@ -169,7 +174,7 @@ function PilastraNavegacao() {
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-200",
+            "flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
             maisAtivo
               ? "bg-primary text-primary-foreground shadow-soft"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -282,13 +287,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-hidden
       />
 
-      {/* Rail de ícones — desktop */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden flex-col items-center gap-4 border-r border-border/60 bg-sidebar/85 py-4 backdrop-blur-xl lg:flex lg:w-[4.5rem]">
-        <Link to="/" aria-label="Início — área de lazer Biel" className="rounded-2xl">
-          <AppLogo tamanho={36} className="rounded-xl shadow-soft" />
+      {/* Rail — desktop: só ícones até xl; em telas largas mostra o nome ao lado. */}
+      <aside className="fixed inset-y-0 left-0 z-20 hidden flex-col items-center gap-4 border-r border-border/60 bg-sidebar/85 py-4 backdrop-blur-xl lg:flex lg:w-[4.5rem] xl:w-56">
+        <Link
+          to="/"
+          aria-label="Início — área de lazer Biel"
+          className="flex items-center gap-2.5 rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none xl:w-full xl:px-3"
+        >
+          <AppLogo tamanho={36} className="shrink-0 rounded-xl shadow-soft" />
+          <span className="hidden truncate text-sm font-bold tracking-tight xl:inline">
+            Área de Lazer
+          </span>
         </Link>
-        <div className="h-px w-8 bg-border/70" aria-hidden />
-        <ScrollArea className="flex-1">
+        <div className="h-px w-8 bg-border/70 xl:w-auto xl:self-stretch xl:mx-3" aria-hidden />
+        <ScrollArea className="flex-1 xl:w-full">
           <RotaLateral />
         </ScrollArea>
       </aside>
@@ -332,7 +344,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      <div className="relative flex min-w-0 flex-1 flex-col lg:pl-[4.5rem]">
+      <div className="relative flex min-w-0 flex-1 flex-col lg:pl-[4.5rem] xl:pl-56">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/60 bg-background/70 px-3 backdrop-blur-xl sm:px-5 sm:gap-3">
           <Button
             variant="ghost"
@@ -347,11 +359,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <AppLogoCompleta compacto />
           </div>
 
+          {/* Busca global única (Ctrl+K): reservas, clientes e páginas. */}
+          <div className="ml-auto min-w-0 md:mr-auto md:ml-0 md:flex-1 md:max-w-md">
+            <PaletaComandos />
+          </div>
+
           {/* Pílulas centrais (desktop) */}
           <PilastraNavegacao />
-          {/* Fecha pílulas: desktop usa flex-1; mobile ocupa o resto */}
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
-            <PaletaComandos />
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <SinoNotificacoes />
             <Tooltip>
               <TooltipTrigger asChild>

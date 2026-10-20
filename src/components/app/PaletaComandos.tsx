@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { CalendarPlus, CheckSquare, Moon, Search, Sun, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,25 +12,31 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { Button } from "@/components/ui/button";
 import { NAVEGACAO } from "@/constants/navegacao";
 import { useTema } from "@/app/providers/ThemeProvider";
+import { useClientes, useReservas } from "@/hooks/useDados";
+import { formatarData } from "@/utils/formatadores";
+
+/** Limites da busca: a paleta filtra localmente, então mantém a lista enxuta. */
+const LIMITE_RESERVAS = 60;
+const LIMITE_CLIENTES = 60;
 
 interface AcaoRapida {
   titulo: string;
-  atalho?: string;
   icone: typeof Search;
-  executar: (irPara: (rota: string) => void) => void;
+  executar: () => void;
 }
 
 /**
- * Paleta de comandos (⌘K / Ctrl+K): pular para qualquer tela e
- * disparar ações rápidas sem tocar no mouse.
+ * Campo de busca global do cabeçalho (Ctrl+K). Abre a paleta que encontra
+ * páginas, ações, reservas e clientes. No celular, vira só o ícone.
  */
 export function PaletaComandos() {
   const [aberta, setAberta] = useState(false);
   const navegar = useNavigate();
   const { tema, definirTema, escuroAtivo } = useTema();
+  const { data: reservas } = useReservas();
+  const { data: clientes } = useClientes();
 
   const irPara = useCallback(
     (rota: string) => {
@@ -50,6 +56,14 @@ export function PaletaComandos() {
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
   }, []);
+
+  /** Reservas mais recentes primeiro; o código curto é o mesmo exibido nas tabelas. */
+  const reservasBusca = useMemo(
+    () => [...reservas].sort((a, b) => b.data.localeCompare(a.data)).slice(0, LIMITE_RESERVAS),
+    [reservas],
+  );
+
+  const clientesBusca = useMemo(() => clientes.slice(0, LIMITE_CLIENTES), [clientes]);
 
   const acoes: AcaoRapida[] = [
     {
@@ -86,32 +100,71 @@ export function PaletaComandos() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-9 gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 text-muted-foreground"
+      <button
+        type="button"
         onClick={() => setAberta(true)}
-        aria-label="Abrir paleta de comandos"
+        aria-label="Buscar reservas, clientes ou páginas (Ctrl K)"
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:w-full md:justify-start md:gap-2 md:px-3"
       >
-        <Search className="size-4" aria-hidden />
-        <span className="hidden lg:inline">Buscar…</span>
+        <Search className="size-4 shrink-0" aria-hidden />
+        <span className="hidden min-w-0 flex-1 truncate text-left text-sm md:inline">
+          Buscar reservas, clientes ou páginas…
+        </span>
         <kbd className="pointer-events-none hidden rounded border border-border bg-background px-1.5 font-mono text-[0.65rem] font-medium lg:inline">
           Ctrl K
         </kbd>
-      </Button>
+      </button>
 
       <CommandDialog open={aberta} onOpenChange={setAberta}>
-        <CommandInput placeholder="Buscar páginas e ações…" />
+        <CommandInput placeholder="Buscar reservas, clientes ou páginas…" />
         <CommandList>
           <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
 
+          <CommandGroup heading="Reservas">
+            {reservasBusca.map((reserva) => (
+              <CommandItem
+                key={reserva.id}
+                value={`reserva ${reserva.clienteNome} ${formatarData(reserva.data)} ${reserva.id} ${reserva.statusReserva}`}
+                onSelect={() => {
+                  setAberta(false);
+                  void navegar({ to: "/reservas", search: { reserva: reserva.id } });
+                }}
+              >
+                <CalendarPlus aria-hidden />
+                <span className="truncate">{reserva.clienteNome}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {formatarData(reserva.data)} · #{reserva.id.slice(0, 5).toUpperCase()}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          <CommandGroup heading="Clientes">
+            {clientesBusca.map((cliente) => (
+              <CommandItem
+                key={cliente.id}
+                value={`cliente ${cliente.nome} ${cliente.telefone} ${cliente.id}`}
+                onSelect={() => {
+                  setAberta(false);
+                  void navegar({ to: "/clientes/$clienteId", params: { clienteId: cliente.id } });
+                }}
+              >
+                <UserPlus aria-hidden />
+                <span className="truncate">{cliente.nome}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {cliente.totalReservas} reserva{cliente.totalReservas === 1 ? "" : "s"}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+
+          <CommandSeparator />
+
           <CommandGroup heading="Ações rápidas">
             {acoes.map((acao) => (
-              <CommandItem
-                key={acao.titulo}
-                value={acao.titulo}
-                onSelect={() => acao.executar(irPara)}
-              >
+              <CommandItem key={acao.titulo} value={acao.titulo} onSelect={acao.executar}>
                 <acao.icone aria-hidden />
                 <span>{acao.titulo}</span>
               </CommandItem>
