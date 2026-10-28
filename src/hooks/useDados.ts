@@ -13,11 +13,13 @@ import { LixeiraService } from "@/services/LixeiraService";
 import { LogService } from "@/services/LogService";
 import { NotificacaoService } from "@/services/NotificacaoService";
 import { ReservaService } from "@/services/ReservaService";
+import { SolicitacoesService } from "@/services/SolicitacoesService";
 
 export const chaves = {
   clientes: ["clientes"] as QueryKey,
   cliente: (id: string) => ["clientes", id] as QueryKey,
   reservas: ["reservas"] as QueryKey,
+  solicitacoesSite: ["solicitacoes-site"] as QueryKey,
   reservasCliente: (id: string) => ["reservas", "cliente", id] as QueryKey,
   despesas: ["despesas"] as QueryKey,
   financeiro: ["financeiro"] as QueryKey,
@@ -57,6 +59,18 @@ export const useReservas = (incluirExcluidas = false) =>
     () => ReservaService.listar(incluirExcluidas),
     [],
   );
+
+export const useSolicitacoesSite = () => {
+  const { admin } = useAuth();
+  const consulta = useQuery({
+    queryKey: chaves.solicitacoesSite,
+    queryFn: () => SolicitacoesService.listarAdmin(),
+    enabled: firebaseConfigurado && Boolean(admin),
+    staleTime: 0,
+    refetchInterval: 15_000,
+  });
+  return { ...consulta, data: consulta.data ?? [] };
+};
 
 export const useReservasDoCliente = (id: string) =>
   usarConsulta(chaves.reservasCliente(id), () => ReservaService.listarPorCliente(id), []);

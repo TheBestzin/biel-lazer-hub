@@ -142,7 +142,7 @@ service cloud.firestore {
         && request.resource.data.observacoes is string
         && request.resource.data.observacoes.size() <= 500
         && request.resource.data.keys().hasOnly(
-             ['nome', 'telefone', 'data', 'convidados', 'observacoes']);
+             ['nome', 'telefone', 'data', 'convidados', 'observacoes', 'createdAt']);
       allow read, update, delete: if eAdmin();
     }
   }

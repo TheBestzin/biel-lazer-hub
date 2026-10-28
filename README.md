@@ -25,6 +25,17 @@ criação de `solicitacoes` validada no servidor. Acesso do admin exige o
      node scripts/set-admin.mjs email@dominio.com --cargo master
    ```
 
+   **PowerShell (Windows):** primeiro entre na pasta raiz do repositório. Troque o nome abaixo pelo nome exato do JSON que você baixou; o arquivo deve ficar fora do repositório:
+
+   ```powershell
+   Set-Location "C:\CAMINHO\PARA\biel-lazer-hub-main"
+   Get-ChildItem -LiteralPath (Join-Path $HOME "Downloads") -Filter *.json | Select-Object -ExpandProperty Name
+   $chave = Join-Path $HOME "Downloads\NOME-EXATO-DO-ARQUIVO.json"
+   if (-not (Test-Path -LiteralPath $chave)) { throw "Chave não encontrada: confira o nome e o caminho do JSON." }
+   $env:GOOGLE_APPLICATION_CREDENTIALS = (Resolve-Path -LiteralPath $chave).Path
+   node .\scripts\set-admin.mjs email@dominio.com --cargo master
+   ```
+
 3. Verificar: rode o mesmo comando com `--verificar email@dominio.com`.
    O usuário precisa **sair e entrar** de novo no sistema.
 

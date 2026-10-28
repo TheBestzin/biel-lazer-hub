@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  CalendarDays,
   CalendarPlus,
   CheckSquare,
   FileText,
   MessageCircle,
   Pencil,
+  Phone,
   Search,
   Trash2,
+  UsersRound,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -46,7 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STATUS_PAGAMENTO } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { chaves, useAcao, useReservas } from "@/hooks/useDados";
+import { chaves, useAcao, useReservas, useSolicitacoesSite } from "@/hooks/useDados";
 import { LogService } from "@/services/LogService";
 import { ReservaService } from "@/services/ReservaService";
 import type { Reserva } from "@/types";
@@ -105,6 +108,12 @@ function tituloGrupo(dataISO: string): string {
 function PaginaReservas() {
   const { admin } = useAuth();
   const { data: reservas, isLoading } = useReservas();
+  const {
+    data: solicitacoesSite,
+    isLoading: carregandoSolicitacoes,
+    isError: erroSolicitacoes,
+    refetch: recarregarSolicitacoes,
+  } = useSolicitacoesSite();
   const search = Route.useSearch();
   const navegar = Route.useNavigate();
 
@@ -251,6 +260,85 @@ function PaginaReservas() {
       />
 
       <LembretesPagamento />
+
+      <section className="space-y-3" aria-labelledby="pedidos-site-titulo">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="pedidos-site-titulo" className="text-lg font-semibold tracking-tight">
+              Pedidos do site
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Solicitações recebidas pelo formulário público; ainda não são reservas confirmadas.
+            </p>
+          </div>
+          <span className="w-fit rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
+            {solicitacoesSite.length} recente{solicitacoesSite.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {carregandoSolicitacoes ? (
+          <Card>
+            <CardContent className="p-4 text-sm text-muted-foreground">
+              Carregando pedidos do site…
+            </CardContent>
+          </Card>
+        ) : erroSolicitacoes ? (
+          <Card>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <p className="text-sm text-destructive">Não foi possível carregar os pedidos do site.</p>
+              <Button variant="outline" size="sm" onClick={() => void recarregarSolicitacoes()}>
+                Tentar novamente
+              </Button>
+            </CardContent>
+          </Card>
+        ) : solicitacoesSite.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-sm text-muted-foreground">
+              Nenhum pedido recebido pelo site ainda.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {solicitacoesSite.map((solicitacao) => (
+              <Card key={solicitacao.id}>
+                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold">{solicitacao.nome}</h3>
+                      <span className="rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning">
+                        Aguardando análise
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarDays className="size-4" aria-hidden />
+                        {formatarData(solicitacao.data)}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <UsersRound className="size-4" aria-hidden />
+                        {solicitacao.convidados} convidados
+                      </span>
+                    </div>
+                    {solicitacao.observacoes && (
+                      <p className="text-sm text-muted-foreground">{solicitacao.observacoes}</p>
+                    )}
+                  </div>
+                  <a
+                    href={`https://wa.me/55${solicitacao.telefone}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    aria-label={`Conversar com ${solicitacao.nome} pelo WhatsApp`}
+                  >
+                    <Phone className="size-4" aria-hidden />
+                    WhatsApp
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">

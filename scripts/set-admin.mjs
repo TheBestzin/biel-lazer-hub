@@ -12,20 +12,21 @@
  * Após rodar, o usuário precisa fazer login novamente para receber o
  * token com o claim. Consultar: node scripts/set-admin.mjs --verificar email@dominio.com
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const raiz = join(__dirname, "..");
 
-let credenciais;
+let initializeApp;
+let cert;
+let getAuth;
 try {
-  credenciais = (await import("firebase-admin")).default;
+  ({ initializeApp, cert } = await import("firebase-admin/app"));
+  ({ getAuth } = await import("firebase-admin/auth"));
 } catch {
-  console.error(
-    "Firebase Admin SDK não instalado. Rode: npm install --save-dev firebase-admin",
-  );
+  console.error("Firebase Admin SDK não instalado. Rode: npm install --save-dev firebase-admin");
   process.exit(1);
 }
 
@@ -34,7 +35,7 @@ const verificar = args.includes("--verificar");
 const restantes = args.filter((a) => !a.startsWith("--"));
 const email = restantes[0];
 const indiceCargo = args.indexOf("--cargo");
-const cargo = indiceCargo >= 0 ? args[indiceCargo + 1] ?? "master" : "master";
+const cargo = indiceCargo >= 0 ? (args[indiceCargo + 1] ?? "master") : "master";
 
 if (!email) {
   console.error(
@@ -51,22 +52,43 @@ if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   process.exit(1);
 }
 
-// Garante que a service account não está dentro do repositório.
-const caminhoCred = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-if (caminhoCred.startsWith(raiz)) {
+// Aceita caminho absoluto do Windows ou relativo ao terminal, mas nunca uma chave
+// dentro do repositório. realpathSync também cobre caminhos com .. e symlinks.
+let caminhoCred;
+try {
+  caminhoCred = realpathSync(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+} catch {
+  console.error(
+    "Não foi possível localizar GOOGLE_APPLICATION_CREDENTIALS. Defina a variável com o caminho completo do JSON da service account e confirme que o arquivo existe.",
+  );
+  process.exit(1);
+}
+
+const caminhoRelativo = relative(realpathSync(raiz), caminhoCred);
+const credencialDentroDoRepo =
+  caminhoRelativo === "" ||
+  (!isAbsolute(caminhoRelativo) &&
+    caminhoRelativo !== ".." &&
+    !caminhoRelativo.startsWith(`..${sep}`));
+if (credencialDentroDoRepo) {
   console.error(
     "A service account está dentro do repositório — mova-a para fora (o repo é público).",
   );
   process.exit(1);
 }
 
-const { initializeApp, cert } = credenciais;
-const app = initializeApp({ credential: cert(requireJSON(caminhoCred)) });
-const auth = app.auth();
-
-function requireJSON(caminho) {
-  return JSON.parse(readFileSync(caminho, "utf8"));
+let contaServico;
+try {
+  contaServico = JSON.parse(readFileSync(caminhoCred, "utf8"));
+} catch {
+  console.error(
+    "Não foi possível ler o JSON da service account. Confirme que o caminho aponta para o arquivo JSON correto.",
+  );
+  process.exit(1);
 }
+
+const app = initializeApp({ credential: cert(contaServico) });
+const auth = getAuth(app);
 
 try {
   const usuario = await auth.getUserByEmail(email);
