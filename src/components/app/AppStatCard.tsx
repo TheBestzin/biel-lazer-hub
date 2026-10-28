@@ -23,7 +23,7 @@ interface AppStatCardProps {
   aoClicar?: () => void;
   indice?: number;
   className?: string;
-  /** Card principal: maior hierarquia tipográfica sobre a mesma superfície. */
+  /** Card de destaque: fundo em gradiente da marca (azul/ciano). */
   destaque?: boolean;
 }
 
@@ -50,8 +50,10 @@ export function AppStatCard({
       initial="initial"
       animate="animate"
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 shadow-card",
-        destaque && "flex flex-col",
+        "group card-hover relative overflow-hidden rounded-2xl border p-5",
+        destaque
+          ? "flex flex-col border-white/10 shadow-elegant destaque-gradient text-white"
+          : "bg-card shadow-elegant",
         aoClicar && "cursor-pointer hover:border-primary/40",
         className,
       )}
@@ -62,14 +64,27 @@ export function AppStatCard({
         if (aoClicar && (evento.key === "Enter" || evento.key === " ")) aoClicar();
       }}
     >
+      {!destaque && (
+        <span
+          className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full brand-gradient opacity-[0.08] blur-2xl transition-opacity duration-300 group-hover:opacity-20"
+          aria-hidden
+        />
+      )}
       <div className="relative flex items-start justify-between gap-3">
-        <p className={cn("font-sans font-medium leading-relaxed", "text-sm text-muted-foreground")}>
+        <p
+          className={cn(
+            "font-sans font-medium leading-relaxed",
+            destaque ? "text-white/85" : "text-muted-foreground",
+          )}
+        >
           {titulo}
         </p>
         <span
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
-            "bg-muted text-muted-foreground",
+            destaque
+              ? "bg-white/15 text-white ring-1 ring-white/25"
+              : "bg-primary-soft text-primary ring-1 ring-primary/10",
           )}
         >
           <Icone className="size-4.5" aria-hidden />
@@ -77,8 +92,8 @@ export function AppStatCard({
       </div>
       <p
         className={cn(
-          "font-sans relative font-semibold tracking-tight lining-nums tabular-nums",
-          destaque ? "mt-8 text-4xl sm:mt-auto sm:text-[2.75rem]" : "mt-4 text-3xl",
+          "font-sans relative font-bold tracking-tight lining-nums tabular-nums",
+          destaque ? "mt-auto text-[2rem]" : "mt-3 text-[1.5rem]",
         )}
       >
         {typeof valorNumerico === "number" ? (
@@ -87,13 +102,15 @@ export function AppStatCard({
           valor
         )}
       </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <div className={cn("mt-2 flex items-center gap-2 text-sm", destaque && "text-white/85")}>
         {typeof variacao === "number" && (
           <span
             className={cn(
               "inline-flex items-center gap-0.5",
-              "font-medium",
-              positiva ? "text-success" : "text-destructive",
+              destaque
+                ? "rounded-full bg-white/15 px-2 py-0.5 font-semibold text-white ring-1 ring-white/25"
+                : "font-medium",
+              !destaque && (positiva ? "text-success" : "text-destructive"),
             )}
           >
             {positiva ? (

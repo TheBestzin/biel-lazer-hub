@@ -11,9 +11,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const rota = useRouterState({ select: (estado) => estado.location.pathname });
   const busca = useRouterState({ select: (estado) => estado.location.searchStr });
 
-  // Rota pública: qualquer pessoa pode consultar disponibilidade e reservar
-  // (e ver a abertura cinematográfica em /intro).
-  if (rota.startsWith("/reservar") || rota.startsWith("/intro")) return <>{children}</>;
+  // Rota pública: qualquer pessoa pode consultar disponibilidade e reservar.
+  if (rota.startsWith("/reservar")) return <>{children}</>;
 
   if (!configurado) return <TelaFirebasePendente />;
   if (carregando) return <TelaCarregamento />;

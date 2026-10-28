@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 export function CtaBarraMobile({ whatsapp }: { whatsapp: string }) {
   const tel = whatsapp.replace(/\D/g, "");
   return (
-    <div className="glass-panel cta-barra-mobile fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 p-3 sm:hidden">
+    <div className="cta-barra-mobile fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 p-3 backdrop-blur-xl sm:hidden">
       <div className="flex gap-2">
         <Button className="tap-press min-h-11 flex-1" asChild>
           <a href="#reservar">
@@ -45,7 +45,7 @@ interface RodapeSiteProps {
 export function RodapeSite({ whatsapp, entrada, saida }: RodapeSiteProps) {
   const tel = whatsapp.replace(/\D/g, "");
   return (
-    <footer className="border-t border-border/60">
+    <footer className="border-t border-border/60 bg-card/40 backdrop-blur">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -59,7 +59,9 @@ export function RodapeSite({ whatsapp, entrada, saida }: RodapeSiteProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Informações</h3>
+          <h3 className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Informações
+          </h3>
           <ul className="space-y-2.5 text-sm">
             <li className="flex items-center gap-2.5">
               <Clock className="size-4 text-primary" aria-hidden />
@@ -75,7 +77,9 @@ export function RodapeSite({ whatsapp, entrada, saida }: RodapeSiteProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Reservas</h3>
+          <h3 className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+            Reservas
+          </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Garanta sua data em poucos minutos — reserve online ou fale direto com a gente.
           </p>

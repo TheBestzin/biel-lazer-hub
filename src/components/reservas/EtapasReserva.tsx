@@ -45,7 +45,7 @@ export function EtapasReserva({ atual, aoIrPara }: EtapasReservaProps) {
             disabled={!clicavel}
             aria-current={atualItem ? "step" : undefined}
             className={cn(
-              "group relative z-10 flex cursor-pointer flex-col items-center gap-1.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group relative z-10 flex cursor-pointer flex-col items-center gap-1.5 focus-visible:outline-none",
               !clicavel && "cursor-default",
             )}
           >
@@ -59,7 +59,7 @@ export function EtapasReserva({ atual, aoIrPara }: EtapasReservaProps) {
                 }
                 className={cn(
                   "grid size-11 place-items-center rounded-full border-2 transition-all duration-300 sm:size-12",
-                  completa && "border-primary bg-primary text-primary-foreground",
+                  completa && "border-primary bg-primary text-primary-foreground shadow-glow",
                   atualItem && "border-primary bg-background text-primary ring-4 ring-primary/15",
                   !completa && !atualItem && "border-border bg-background text-muted-foreground",
                 )}
@@ -75,7 +75,7 @@ export function EtapasReserva({ atual, aoIrPara }: EtapasReservaProps) {
             </span>
             <span
               className={cn(
-                "text-xs font-medium sm:text-sm",
+                "text-[0.7rem] font-semibold tracking-wide uppercase sm:text-xs",
                 atualItem ? "text-primary" : completa ? "text-foreground" : "text-muted-foreground",
               )}
             >

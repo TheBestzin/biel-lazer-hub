@@ -31,8 +31,7 @@ export const meta = [
     content: "Consulte a disponibilidade do dia que você quer e reserve online.",
   },
   { name: "twitter:image", content: URL_OG_IMAGE },
-  { name: "theme-color", content: "#f5f5f7", media: "(prefers-color-scheme: light)" },
-  { name: "theme-color", content: "#101012", media: "(prefers-color-scheme: dark)" },
+  { name: "theme-color", content: "#0a2533" },
 ];
 
 /** Ícones carregados no head — apple-touch-icon para instalação no iPhone. */
@@ -40,6 +39,12 @@ export const links = [
   { rel: "icon", href: "/favicon.png", type: "image/png" },
   { rel: "apple-touch-icon", href: "/logo.png" },
   { rel: "preload", as: "image", href: URL_OG_IMAGE },
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" as const },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+  },
 ];
 
 /**

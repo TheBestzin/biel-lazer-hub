@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -118,6 +118,16 @@ function PaginaReservarPublica() {
     convidados: number;
     protocolo: string | null;
   } | null>(null);
+
+  // Força o visual escuro na página pública, sem alterar preferências salvas.
+  useEffect(() => {
+    const html = document.documentElement;
+    const jaEscuro = html.classList.contains("dark");
+    if (!jaEscuro) html.classList.add("dark");
+    return () => {
+      if (!jaEscuro) html.classList.remove("dark");
+    };
+  }, []);
 
   // O público só lê a coleção sem dado pessoal (`datas_ocupadas`).
   const {
@@ -376,7 +386,7 @@ function PaginaReservarPublica() {
       <main className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6" id="reservar">
         {/* Wizard de reserva */}
         <section
-          className="rounded-3xl border border-border/60 bg-card p-4 shadow-card sm:p-8 lg:p-10"
+          className="rounded-3xl border border-border/70 bg-card/80 p-5 shadow-elegant backdrop-blur-xl sm:p-8"
           aria-label="Reservar"
         >
           <div ref={topoFormulario} className="scroll-mt-24" />
@@ -506,7 +516,7 @@ function PaginaReservarPublica() {
 
                 {/* Resumo lateral (desktop) / compacto (mobile) */}
                 <ResumoReserva
-                  className="hidden lg:sticky lg:top-24 lg:block"
+                  className="lg:sticky lg:top-24"
                   data={dataEscolhida}
                   entrada={dataEscolhida ? entrada : null}
                   saida={saida}

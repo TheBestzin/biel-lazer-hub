@@ -14,7 +14,6 @@ import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AuditoriaRouteImport } from './routes/auditoria'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
-import { Route as IntroRouteImport } from './routes/intro'
 import { Route as LixeiraRouteImport } from './routes/lixeira'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
@@ -46,11 +45,6 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
 const FinanceiroRoute = FinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IntroRoute = IntroRouteImport.update({
-  id: '/intro',
-  path: '/intro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LixeiraRoute = LixeiraRouteImport.update({
@@ -95,7 +89,6 @@ export interface FileRoutesByFullPath {
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/financeiro': typeof FinanceiroRoute
-  '/intro': typeof IntroRoute
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
@@ -110,7 +103,6 @@ export interface FileRoutesByTo {
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/financeiro': typeof FinanceiroRoute
-  '/intro': typeof IntroRoute
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
@@ -126,7 +118,6 @@ export interface FileRoutesById {
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/financeiro': typeof FinanceiroRoute
-  '/intro': typeof IntroRoute
   '/lixeira': typeof LixeiraRoute
   '/notificacoes': typeof NotificacoesRoute
   '/relatorios': typeof RelatoriosRoute
@@ -143,7 +134,6 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/configuracoes'
     | '/financeiro'
-    | '/intro'
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
@@ -158,7 +148,6 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/configuracoes'
     | '/financeiro'
-    | '/intro'
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
@@ -173,7 +162,6 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/configuracoes'
     | '/financeiro'
-    | '/intro'
     | '/lixeira'
     | '/notificacoes'
     | '/relatorios'
@@ -189,7 +177,6 @@ export interface RootRouteChildren {
   AuditoriaRoute: typeof AuditoriaRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   FinanceiroRoute: typeof FinanceiroRoute
-  IntroRoute: typeof IntroRoute
   LixeiraRoute: typeof LixeiraRoute
   NotificacoesRoute: typeof NotificacoesRoute
   RelatoriosRoute: typeof RelatoriosRoute
@@ -234,13 +221,6 @@ declare module '@tanstack/react-router' {
       path: '/financeiro'
       fullPath: '/financeiro'
       preLoaderRoute: typeof FinanceiroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/intro': {
-      id: '/intro'
-      path: '/intro'
-      fullPath: '/intro'
-      preLoaderRoute: typeof IntroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lixeira': {
@@ -301,7 +281,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuditoriaRoute: AuditoriaRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   FinanceiroRoute: FinanceiroRoute,
-  IntroRoute: IntroRoute,
   LixeiraRoute: LixeiraRoute,
   NotificacoesRoute: NotificacoesRoute,
   RelatoriosRoute: RelatoriosRoute,

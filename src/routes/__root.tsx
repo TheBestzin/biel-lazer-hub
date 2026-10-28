@@ -18,7 +18,6 @@ import { AuthProvider } from "@/app/providers/AuthProvider";
 import { ThemeProvider } from "@/app/providers/ThemeProvider";
 import { AuthGate } from "@/components/app/AuthGate";
 import { TelaCarregamento } from "@/components/app/AppLoading";
-import { IntroAbertura } from "@/components/intro/IntroAnimacao";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
@@ -104,6 +103,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap",
+      },
+
     ],
   }),
   shellComponent: RootShell,
@@ -134,7 +140,6 @@ function RootComponent() {
       <ClientOnly fallback={<TelaCarregamento />}>
         <ThemeProvider>
           <AuthProvider>
-            <IntroAbertura />
             <TooltipProvider delayDuration={200}>
               <MotionConfig reducedMotion="user">
                 <AuthGate>

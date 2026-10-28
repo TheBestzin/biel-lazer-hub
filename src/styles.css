@@ -6,13 +6,14 @@
 
 /*
  * Design System — Área de Lazer Biel
- * Princípios Apple adaptados para web: conteúdo em primeiro plano,
- * superfícies neutras e cor semântica. Claro e escuro compartilham a mesma escala.
+ * Azul piscina + verde natureza + neutros quentes.
+ * Todos os valores de cor em oklch. Nunca usar cores fixas em componentes.
  */
 
 @theme inline {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Títulos e números: mesma família do corpo (sans moderna, sem serifa). */
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -72,126 +73,180 @@
   --animate-acc-down: acc-down 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-acc-up: acc-up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --shadow-soft: 0 1px 3px rgb(0 0 0 / 0.04);
-  --shadow-card: 0 2px 12px -6px rgb(0 0 0 / 0.1);
-  --shadow-elevated: 0 8px 32px -12px rgb(0 0 0 / 0.18);
-  --shadow-pop: 0 16px 56px -16px rgb(0 0 0 / 0.22);
-  --shadow-glow: 0 1px 4px rgb(0 0 0 / 0.08);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.03 240 / 0.04), 0 2px 8px oklch(0.2 0.03 240 / 0.06);
+  --shadow-card: 0 1px 3px oklch(0.2 0.03 240 / 0.06), 0 8px 24px -12px oklch(0.2 0.03 240 / 0.14);
+  --shadow-elevated:
+    0 2px 6px oklch(0.2 0.03 240 / 0.06), 0 16px 44px -16px oklch(0.2 0.03 240 / 0.2);
+  --shadow-pop: 0 12px 40px -12px oklch(0.2 0.03 240 / 0.24);
+  --shadow-glow: 0 10px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
 :root {
-  color-scheme: light;
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  --background: #f5f5f7;
-  --foreground: #1d1d1f;
-  --card: #ffffff;
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
+  /* Aqua Tropical (claro) */
+  --background: oklch(0.986 0.009 222.1);
+  --foreground: oklch(0.278 0.056 249.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.278 0.056 249.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.278 0.056 249.8);
 
-  --primary: #0066cc;
-  --primary-foreground: #ffffff;
-  --primary-soft: #e8f1fc;
-  --secondary: #ebebef;
-  --secondary-foreground: var(--foreground);
-  --muted: #ebebef;
-  --muted-foreground: #6e6e73;
-  --accent: #e4e4e9;
-  --accent-foreground: var(--foreground);
+  --primary: oklch(0.721 0.129 216.8);
+  --primary-foreground: oklch(0.18 0.04 240);
+  --primary-soft: oklch(0.955 0.038 210);
 
-  --destructive: #c32d28;
-  --destructive-foreground: #ffffff;
-  --success: #24813b;
-  --success-foreground: #ffffff;
-  --warning: #946000;
-  --warning-foreground: #523700;
-  --info: var(--primary);
-  --info-foreground: var(--primary-foreground);
-  --nature: var(--success);
-  --nature-foreground: var(--success-foreground);
-  --nature-soft: #e8f5eb;
-  --wood: var(--warning);
-  --wood-foreground: #ffffff;
+  --secondary: oklch(0.962 0.028 212);
+  --secondary-foreground: oklch(0.3 0.055 245);
 
-  --border: #d2d2d7;
-  --input: #86868b;
-  --ring: var(--primary);
+  --nature: oklch(0.772 0.188 154.1);
+  --nature-foreground: oklch(0.2 0.05 155);
+  --nature-soft: oklch(0.955 0.045 158);
 
-  --chart-1: var(--primary);
-  --chart-2: var(--success);
-  --chart-3: var(--warning);
-  --chart-4: #7654b5;
-  --chart-5: var(--destructive);
+  --wood: oklch(0.883 0.165 92.2);
+  --wood-foreground: oklch(0.26 0.06 90);
 
-  --sidebar: #ececef;
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: #dcdce1;
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
+  --muted: oklch(0.962 0.022 212);
+  --muted-foreground: oklch(0.52 0.045 240);
+  --accent: oklch(0.949 0.045 215);
+  --accent-foreground: oklch(0.3 0.06 245);
 
-  /* Mantém as utilidades usadas em gráficos e progresso, sem gradientes decorativos. */
-  --gradient-brand: linear-gradient(var(--primary), var(--primary));
-  --gradient-surface: none;
-  --gradient-mesh: none;
-  --glass-bg: color-mix(in srgb, var(--card) 85%, transparent);
-  --glass-border: color-mix(in srgb, var(--border) 70%, transparent);
-  --gradient-destaque: linear-gradient(var(--foreground), var(--foreground));
+  --destructive: oklch(0.675 0.213 21.1);
+  --destructive-foreground: oklch(0.99 0.01 20);
+  --success: oklch(0.772 0.188 154.1);
+  --success-foreground: oklch(0.2 0.05 155);
+  --warning: oklch(0.883 0.165 92.2);
+  --warning-foreground: oklch(0.26 0.06 90);
+  --info: oklch(0.669 0.184 248.8);
+  --info-foreground: oklch(0.99 0.008 240);
+
+  --border: oklch(0.936 0.045 208.5);
+  --input: oklch(0.936 0.045 208.5);
+  --ring: oklch(0.721 0.129 216.8);
+
+  --chart-1: oklch(0.721 0.129 216.8);
+  --chart-2: oklch(0.772 0.188 154.1);
+  --chart-3: oklch(0.883 0.165 92.2);
+  --chart-4: oklch(0.669 0.184 248.8);
+  --chart-5: oklch(0.675 0.213 21.1);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.278 0.056 249.8);
+  --sidebar-primary: oklch(0.721 0.129 216.8);
+  --sidebar-primary-foreground: oklch(0.18 0.04 240);
+  --sidebar-accent: oklch(0.949 0.045 215);
+  --sidebar-accent-foreground: oklch(0.3 0.06 245);
+  --sidebar-border: oklch(0.936 0.045 208.5);
+  --sidebar-ring: oklch(0.721 0.129 216.8);
+
+  --gradient-brand: linear-gradient(135deg, oklch(0.844 0.146 209.3), oklch(0.669 0.184 248.8));
+  --gradient-surface: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 8%, transparent),
+    transparent 42%
+  );
+  --gradient-mesh:
+    radial-gradient(
+      60% 55% at 12% 0%,
+      color-mix(in oklab, var(--primary) 20%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 92% 8%,
+      color-mix(in oklab, var(--info) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 100%,
+      color-mix(in oklab, var(--nature) 10%, transparent),
+      transparent 75%
+    );
+  --glass-bg: color-mix(in oklab, var(--card) 74%, transparent);
+  --glass-border: color-mix(in oklab, var(--primary) 18%, transparent);
+  /* Destaque (card principal): azul-petróleo, texto branco ≥ 4.5:1 em todo o gradiente. */
+  --gradient-destaque: linear-gradient(135deg, oklch(0.42 0.085 212), oklch(0.27 0.055 232));
 }
 
 .dark {
-  color-scheme: dark;
-  --background: #101012;
-  --foreground: #f5f5f7;
-  --card: #1c1c1e;
-  --primary: #75b5ff;
-  --primary-foreground: #071a30;
-  --primary-soft: #182d47;
-  --secondary: #2c2c2e;
-  --muted: #2c2c2e;
-  --muted-foreground: #a1a1a6;
-  --accent: #38383b;
-  --destructive: #ff8983;
-  --destructive-foreground: #38100e;
-  --success: #73d68c;
-  --success-foreground: #0b2c15;
-  --nature-soft: #193321;
-  --warning: #ffd166;
-  --warning-foreground: #332500;
-  --wood-foreground: var(--warning-foreground);
-  --border: #3a3a3e;
-  --input: #76767c;
-  --chart-4: #c2a7ef;
-  --sidebar: #171719;
-  --sidebar-accent: #333336;
-}
+  /* Deep Pool (escuro) */
+  --background: oklch(0.18 0.025 235); /* #07141C petróleo profundo */
+  --foreground: oklch(0.976 0.02 212.5);
+  --card: oklch(0.23 0.032 236); /* #0C1E28 superfície */
+  --card-foreground: oklch(0.976 0.02 212.5);
+  --popover: oklch(0.23 0.032 236);
+  --popover-foreground: oklch(0.976 0.02 212.5);
 
-/* Vidro apenas na navegação; preferências de acessibilidade recebem fundo opaco. */
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  :root {
-    --glass-bg: var(--card);
-    --glass-border: var(--input);
-  }
+  --primary: oklch(0.79 0.135 211); /* #22D3EE marca */
+  --primary-foreground: oklch(0.18 0.025 235);
+  --primary-soft: oklch(0.33 0.06 220);
 
-  .glass-panel {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
+  --secondary: oklch(0.28 0.04 234);
+  --secondary-foreground: oklch(0.95 0.02 212);
 
-@media (prefers-contrast: more) {
-  :root {
-    --border: #77777c;
-    --muted-foreground: #515155;
-  }
+  --nature: oklch(0.819 0.18 159.8);
+  --nature-foreground: oklch(0.2 0.04 160);
+  --nature-soft: oklch(0.32 0.06 165);
 
-  .dark {
-    --border: #86868b;
-    --muted-foreground: #d2d2d7;
-  }
+  --wood: oklch(0.883 0.165 92.2);
+  --wood-foreground: oklch(0.22 0.05 90);
+
+  --muted: oklch(0.28 0.04 234);
+  --muted-foreground: oklch(0.8 0.03 214); /* ≥ 7:1 sobre --card */
+  --accent: oklch(0.34 0.062 225);
+  --accent-foreground: oklch(0.95 0.03 210);
+
+  --destructive: oklch(0.73 0.165 22); /* #F87171 */
+  --destructive-foreground: oklch(0.17 0.03 20);
+  --success: oklch(0.79 0.15 166); /* #34D399 */
+  --success-foreground: oklch(0.18 0.03 165);
+  --warning: oklch(0.86 0.165 85); /* #FBBF24 */
+  --warning-foreground: oklch(0.2 0.04 85);
+  --info: oklch(0.641 0.197 253);
+  --info-foreground: oklch(0.98 0.01 240);
+
+  --border: oklch(0.36 0.045 232);
+  --input: oklch(0.36 0.045 232);
+  --ring: oklch(0.816 0.145 216.5);
+
+  --chart-1: oklch(0.816 0.145 216.5);
+  --chart-2: oklch(0.868 0.16 178.2);
+  --chart-3: oklch(0.883 0.165 92.2);
+  --chart-4: oklch(0.641 0.197 253);
+  --chart-5: oklch(0.683 0.207 19);
+
+  --sidebar: oklch(0.2 0.03 235);
+  --sidebar-foreground: oklch(0.96 0.02 212);
+  --sidebar-primary: oklch(0.816 0.145 216.5);
+  --sidebar-primary-foreground: oklch(0.203 0.032 233.7);
+  --sidebar-accent: oklch(0.31 0.055 228);
+  --sidebar-accent-foreground: oklch(0.95 0.02 212);
+  --sidebar-border: oklch(0.36 0.045 232);
+  --sidebar-ring: oklch(0.816 0.145 216.5);
+
+  --gradient-brand: linear-gradient(135deg, oklch(0.868 0.16 178.2), oklch(0.79 0.135 211));
+  --gradient-surface: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 10%, transparent),
+    transparent 42%
+  );
+  --gradient-mesh:
+    radial-gradient(
+      60% 55% at 12% 0%,
+      color-mix(in oklab, var(--primary) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 92% 8%,
+      color-mix(in oklab, oklch(0.868 0.16 178.2) 12%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 100%,
+      color-mix(in oklab, var(--info) 12%, transparent),
+      transparent 75%
+    );
+  --glass-bg: color-mix(in oklab, var(--card) 72%, transparent);
+  --glass-border: color-mix(in oklab, var(--primary) 22%, transparent);
 }
 
 @layer base {
@@ -212,8 +267,6 @@
       "cv03" 1,
       "cv04" 1;
     -webkit-font-smoothing: antialiased;
-    font-size: 1rem;
-    line-height: 1.5;
   }
 
   ::-webkit-scrollbar {
@@ -272,10 +325,12 @@
 
 @utility card-hover {
   transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
   &:hover {
-    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-pop);
   }
 }
 
@@ -668,438 +723,5 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .logo-entrada {
     animation: none;
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* ---- Abertura premium (intro cinematográfica do emblema) ---------- */
-/* ------------------------------------------------------------------ */
-
-.ia {
-  display: block;
-  width: min(76vmin, 540px);
-  height: auto;
-  overflow: visible;
-}
-
-.ia-emblema {
-  animation: ia-emblema-entra 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  filter: drop-shadow(0 30px 70px rgba(4, 70, 130, 0.2));
-}
-
-@keyframes ia-emblema-entra {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes ia-tracar {
-  from {
-    /* 1.02 evita o ponto degenerado do linecap round no início do traço */
-    stroke-dashoffset: 1.02;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes ia-aparecer {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 0.0–0.8s: o aro se desenha e a luz varre a borda */
-.ia-aro-traco {
-  animation: ia-tracar 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
-}
-
-.ia-aro-luz {
-  filter: blur(2.5px);
-  animation: ia-aro-luz 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.08s both;
-}
-
-@keyframes ia-aro-luz {
-  0% {
-    opacity: 0;
-    stroke-dashoffset: 1;
-  }
-  15% {
-    opacity: 1;
-  }
-  78% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    stroke-dashoffset: 0;
-  }
-}
-
-/* preenchimento glossy do interior, depois dissolution para a cena */
-.ia-preenchido {
-  animation: ia-preenchido 1.1s ease-in-out 0.5s both;
-}
-
-@keyframes ia-preenchido {
-  0% {
-    opacity: 0;
-  }
-  35% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.ia-contorno-interno {
-  animation: ia-aparecer 0.45s ease-out 1.05s both;
-}
-
-/* impulso de paralaxe suave na cena inteira */
-.ia-cena {
-  transform-origin: 256px 256px;
-  animation: ia-empurrar 2.4s cubic-bezier(0.16, 1, 0.3, 1) 2.8s both;
-}
-
-@keyframes ia-empurrar {
-  from {
-    transform: scale(1.055);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-.ia-cena-fundo {
-  animation: ia-aparecer 0.55s ease-out 0.95s both;
-}
-
-/* 0.6–1.6s: o sol nasce e respira; listras deslizam uma a uma */
-.ia-sol {
-  animation:
-    ia-sol-nasce 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both,
-    ia-aparecer 0.4s ease-out 0.6s both;
-}
-
-@keyframes ia-sol-nasce {
-  from {
-    transform: translateY(274px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.ia-sol-halo {
-  animation:
-    ia-aparecer 0.9s ease-out 1.15s both,
-    ia-respira 4.4s ease-in-out 6s infinite;
-}
-
-@keyframes ia-respira {
-  0%,
-  100% {
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.ia-listra {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ia-deslizar-listra 0.32s cubic-bezier(0.16, 1, 0.3, 1) var(--ia-d, 1.2s) both;
-}
-
-@keyframes ia-deslizar-listra {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.ia-estrela {
-  animation: ia-titila 3.6s ease-in-out var(--ia-d, 0.2s) infinite backwards;
-}
-
-@keyframes ia-titila {
-  0%,
-  100% {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* 1.2–2.4s: palmeira cresce; frondas desabrocham com leve balanço */
-.ia-tronco {
-  animation: ia-tracar 0.85s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
-}
-
-.ia-fronde {
-  transform-origin: 122px 166px;
-  transform-box: view-box;
-  animation:
-    ia-tracar 0.66s cubic-bezier(0.34, 1.3, 0.64, 1) var(--ia-d, 1.5s) both,
-    ia-desabrocha 0.8s cubic-bezier(0.34, 1.4, 0.64, 1) var(--ia-d, 1.5s) both;
-}
-
-@keyframes ia-desabrocha {
-  from {
-    transform: rotate(-12deg);
-  }
-  65% {
-    transform: rotate(3deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
-}
-
-.ia-fronde-luz {
-  animation: ia-tracar 0.6s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--ia-d, 1.5s) + 0.18s) both;
-}
-
-/* balanço suave das frondas depois de desabrocharem */
-.ia-frondes {
-  transform-origin: 122px 166px;
-  transform-box: view-box;
-  animation: ia-balanca 6s ease-in-out 2.9s infinite alternate;
-}
-
-@keyframes ia-balanca {
-  from {
-    transform: rotate(-1.3deg);
-  }
-  to {
-    transform: rotate(1.3deg);
-  }
-}
-
-.ia-cocos {
-  transform-origin: 124px 179px;
-  animation: ia-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 2.2s both;
-}
-
-@keyframes ia-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.4);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 2.0–3.2s: espreguiçadeiras deslizam dos lados */
-.ia-vem-esq,
-.ia-vem-dir {
-  animation: ia-vem 0.75s cubic-bezier(0.34, 1.4, 0.64, 1) var(--ia-d, 2s) both;
-}
-
-@keyframes ia-vem {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.ia-vem-esq {
-  animation-name: ia-chega-esq;
-}
-
-.ia-vem-dir {
-  animation-name: ia-chega-dir;
-}
-
-@keyframes ia-chega-esq {
-  from {
-    opacity: 0;
-    transform: translateX(-64px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes ia-chega-dir {
-  from {
-    opacity: 0;
-    transform: translateX(64px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* tochas acendendo uma por uma, com mini-bloom */
-.ia-lanterna-halo {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation:
-    ia-bloom 0.55s ease-out var(--ia-d, 2.2s) both,
-    ia-respira 3s ease-in-out calc(var(--ia-d, 2.2s) + 0.6s) infinite;
-}
-
-@keyframes ia-bloom {
-  from {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  60% {
-    opacity: 0.95;
-    transform: scale(1.18);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.ia-chama {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation:
-    ia-bloom 0.5s ease-out var(--ia-d, 2.2s) both,
-    ia-fremir 0.8s ease-in-out calc(var(--ia-d, 2.2s) + 0.55s) infinite alternate;
-}
-
-@keyframes ia-fremir {
-  from {
-    opacity: 0.9;
-    transform: scaleX(1) scaleY(1);
-  }
-  to {
-    opacity: 1;
-    transform: scaleX(0.92) scaleY(1.14);
-  }
-}
-
-/* 2.8s+: água cintila; cáusticas derivam e reflexos dourados respiram */
-.ia-caustica {
-  animation:
-    ia-aparecer 0.5s ease-out 2.8s both,
-    ia-deriva 5.4s ease-in-out 3.35s infinite alternate;
-}
-
-@keyframes ia-deriva {
-  from {
-    transform: translateX(-15px);
-  }
-  to {
-    transform: translateX(15px);
-  }
-}
-
-.ia-reflexo {
-  animation:
-    ia-aparecer 0.55s ease-out var(--ia-d, 3.05s) both,
-    ia-respira 2.8s ease-in-out calc(var(--ia-d, 3.05s) + 0.55s) infinite;
-}
-
-/* 3.8–5.0s: faixa ondulada varre do canto inferior esquerdo */
-.ia-onda-escura {
-  animation: ia-tracar 0.85s cubic-bezier(0.16, 1, 0.3, 1) 3.85s both;
-}
-
-.ia-onda-azul {
-  animation: ia-tracar 1.05s cubic-bezier(0.16, 1, 0.3, 1) 3.95s both;
-}
-
-.ia-onda-luz {
-  animation:
-    ia-tracar 1.2s cubic-bezier(0.16, 1, 0.3, 1) 4.35s both,
-    ia-respira 3.4s ease-in-out 6.6s infinite;
-}
-
-/* varredura de brilho pelo emblema inteiro */
-.ia-luz {
-  animation: ia-luz 0.95s ease-in-out 4.5s both;
-}
-
-@keyframes ia-luz {
-  from {
-    opacity: 0;
-    transform: translateX(-150px);
-  }
-  30% {
-    opacity: 0.5;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(740px);
-  }
-}
-
-.ia-pisca {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ia-pisca 0.7s ease-out var(--ia-d, 2.95s) both;
-}
-
-@keyframes ia-pisca {
-  from {
-    opacity: 0;
-    transform: scale(0) rotate(0deg);
-  }
-  55% {
-    opacity: 1;
-    transform: scale(1) rotate(20deg);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.4) rotate(40deg);
-  }
-}
-
-/* overlay de abertura: fundo branco puro, some em fade */
-.abertura-moldura {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: grid;
-  place-items: center;
-  background: #ffffff;
-  cursor: pointer;
-  opacity: 1;
-  transition:
-    opacity 0.75s ease,
-    visibility 0.75s ease;
-}
-
-.abertura-moldura--saindo {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* usuários com movimento reduzido veem o quadro final estático:
-   zera também os atrasos (o bloqueio global zera apenas a duração) */
-@media (prefers-reduced-motion: reduce) {
-  .ia,
-  .ia * {
-    animation-delay: 0s !important;
-  }
-  .abertura-moldura {
-    display: none;
   }
 }

@@ -73,11 +73,17 @@ export function ResumoReserva({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border/60 bg-background",
+        "relative overflow-hidden rounded-3xl border border-primary/25 bg-card/85 shadow-elegant backdrop-blur-xl",
         className,
       )}
       aria-label="Resumo da reserva"
     >
+      {/* Brilho decorativo */}
+      <span
+        className="pointer-events-none absolute -top-20 -right-20 size-48 rounded-full bg-primary/15 blur-3xl"
+        aria-hidden
+      />
+
       <div className="relative p-5 sm:p-6">
         <div className="flex items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary-soft text-primary">
@@ -105,7 +111,9 @@ export function ResumoReserva({
                   <linha.icone className="size-4" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">{linha.rotulo}</p>
+                  <p className="text-[0.65rem] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    {linha.rotulo}
+                  </p>
                   <AnimateValue
                     chave={linha.id}
                     chaveValor={linha.chaveValor}
@@ -137,7 +145,7 @@ export function ResumoReserva({
 
         {/* Valor */}
         {valor !== null && valor > 0 && (
-          <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/60 bg-card px-4 py-3">
+          <div className="mt-3 flex items-center justify-between rounded-2xl border border-primary/25 bg-primary-soft/60 px-4 py-3">
             <span className="text-sm font-medium text-muted-foreground">Diária</span>
             <span className="font-display text-lg font-bold tabular-nums text-primary">
               {formatarMoeda(valor)}
@@ -227,7 +235,7 @@ export function ResumoReservaCompacto({ data, entrada, saida, nome }: ResumoRese
 
   return (
     <div
-      className="grid grid-cols-2 gap-2 rounded-2xl border border-border/60 bg-background p-3 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-2 rounded-2xl border border-primary/20 bg-primary-soft/40 p-3 sm:grid-cols-4"
       aria-label="Resumo da reserva"
     >
       {itens.map((item) => (

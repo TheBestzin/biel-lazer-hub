@@ -8,7 +8,7 @@ interface AppLogoProps {
 export function AppLogo({ className, tamanho = 40 }: AppLogoProps) {
   return (
     <img
-      src="/intro/logo-biel.png"
+      src="/logo-biel.png"
       width={tamanho}
       height={tamanho}
       alt="Logotipo Área de Lazer Biel"
