@@ -34,7 +34,7 @@ export function Depoimentos() {
 
   // Autoplay suave — pausa quando o usuário interage (drag/teclado).
   useEffect(() => {
-    if (!apiEmbla) return;
+    if (!apiEmbla || reduzir) return;
     const id = window.setInterval(() => apiEmbla.scrollNext(), 6000);
     const pausar = () => window.clearInterval(id);
     apiEmbla.on("pointerDown", pausar);
@@ -42,10 +42,14 @@ export function Depoimentos() {
       apiEmbla.off("pointerDown", pausar);
       window.clearInterval(id);
     };
-  }, [apiEmbla]);
+  }, [apiEmbla, reduzir]);
 
   return (
-    <section id="depoimentos" className="scroll-mt-24 py-16 sm:py-20" aria-label="Depoimentos">
+    <section
+      id="depoimentos"
+      className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6 sm:py-20"
+      aria-label="Depoimentos"
+    >
       <TituloSecao
         kicker="Quem já viveu"
         titulo="Experiências de quem reservou"
@@ -67,20 +71,20 @@ export function Depoimentos() {
                   key={depoimento.autor}
                   className="min-w-0 shrink-0 grow-0 basis-full pl-0.5 sm:basis-1/2"
                 >
-                  <div className="card-hover mx-2 flex h-full flex-col gap-4 rounded-3xl border border-border/70 bg-card/70 p-6 backdrop-blur sm:p-7">
+                  <div className="mx-2 flex h-full flex-col gap-5 rounded-3xl bg-card p-6 sm:p-8">
                     <div className="flex items-center justify-between">
                       <span className="flex gap-0.5" aria-label="5 de 5 estrelas">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star key={i} className="size-4 fill-warning text-warning" aria-hidden />
                         ))}
                       </span>
-                      <Quote className="size-6 text-primary/25" aria-hidden />
+                      <Quote className="size-6 text-muted-foreground/50" aria-hidden />
                     </div>
-                    <blockquote className="flex-1 text-sm leading-relaxed text-foreground/90">
+                    <blockquote className="flex-1 text-base leading-relaxed text-foreground">
                       “{depoimento.texto}”
                     </blockquote>
                     <figcaption className="flex items-center gap-3 border-t border-border/60 pt-4">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground">
                         {depoimento.autor.charAt(0)}
                       </span>
                       <span className="min-w-0">

@@ -46,10 +46,7 @@ export function CampoComErro({
 }) {
   return (
     <div className="space-y-2">
-      <Label
-        htmlFor={id}
-        className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-      >
+      <Label htmlFor={id} className="text-sm font-medium">
         {label}
       </Label>
       {children}
@@ -321,10 +318,7 @@ export function EtapaDados({
       </div>
 
       <div className="space-y-2">
-        <Label
-          htmlFor="publico-convidados"
-          className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-        >
+        <Label htmlFor="publico-convidados" className="text-sm font-medium">
           Convidados
         </Label>
         <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 px-4 py-2">
@@ -357,10 +351,7 @@ export function EtapaDados({
       </div>
 
       <div className="space-y-2">
-        <Label
-          htmlFor="publico-obs"
-          className="text-xs font-bold tracking-[0.18em] text-muted-foreground uppercase"
-        >
+        <Label htmlFor="publico-obs" className="text-sm font-medium">
           Observações (opcional)
         </Label>
         <Textarea
@@ -459,9 +450,7 @@ export function EtapaConfirmacao({
             key={linha.rotulo}
             className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-b border-border/50 px-4 py-3 last:border-b-0 sm:px-5"
           >
-            <span className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-              {linha.rotulo}
-            </span>
+            <span className="text-sm text-muted-foreground">{linha.rotulo}</span>
             <span className="text-right text-sm font-semibold capitalize">{linha.valor}</span>
           </div>
         ))}
@@ -599,9 +588,7 @@ export function TelaSucesso({
               <item.icone className="size-4.5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[0.65rem] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                {item.rotulo}
-              </p>
+              <p className="text-xs font-medium text-muted-foreground">{item.rotulo}</p>
               <p className={cn("truncate text-sm font-semibold", item.capitalizar && "capitalize")}>
                 {item.valor}
               </p>

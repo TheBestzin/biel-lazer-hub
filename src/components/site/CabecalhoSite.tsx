@@ -43,23 +43,28 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
       initial="initial"
       animate="animate"
       className={cn(
-        "fixed inset-x-0 top-0 z-40 transition-all duration-300",
-        rolou
-          ? "border-b border-border/60 bg-background/80 shadow-soft backdrop-blur-xl"
-          : "bg-transparent",
+        "glass-panel fixed inset-x-0 top-0 z-40 border-x-0 border-t-0 transition-shadow duration-300",
+        rolou && "shadow-soft",
       )}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <a href="#reservar" className="flex items-center gap-2" aria-label="Voltar ao topo">
-          <AppLogo tamanho={36} />
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+        <a
+          href="#inicio"
+          className="flex min-h-11 items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Área de Lazer Biel — voltar ao topo"
+        >
+          <AppLogo tamanho={32} />
+          <span className="hidden text-sm font-semibold tracking-tight sm:inline">
+            Área de Lazer Biel
+          </span>
         </a>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Seções da página">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Seções da página">
           {LINKS.map((link) => (
             <a
               key={link.ancora}
               href={link.ancora}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="rounded-full px-3 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               {link.rotulo}
             </a>
@@ -71,7 +76,7 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
             <Button variant="outline" size="sm" className="rounded-full" asChild>
               <a href={`https://wa.me/55${tel}`} target="_blank" rel="noreferrer">
                 <MessageCircle className="size-4" aria-hidden />
-                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sr-only sm:not-sr-only">WhatsApp</span>
               </a>
             </Button>
           )}
@@ -81,7 +86,7 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full md:hidden"
+            className="rounded-full lg:hidden"
             aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuAberto}
             onClick={() => setMenuAberto((aberto) => !aberto)}
@@ -102,7 +107,7 @@ export function CabecalhoSite({ whatsapp }: { whatsapp: string }) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="border-t border-border/60 bg-background/95 px-4 pb-4 pt-2 backdrop-blur-xl md:hidden"
+            className="border-t border-border/60 bg-card px-4 pb-4 pt-2 lg:hidden"
             aria-label="Seções da página (mobile)"
           >
             {LINKS.map((link) => (

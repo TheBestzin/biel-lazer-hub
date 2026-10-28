@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import type { Tema } from "@/types";
 
@@ -20,11 +28,11 @@ function aplicar(tema: Tema): boolean {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [tema, setTema] = useState<Tema>("dark");
-  const [escuroAtivo, setEscuroAtivo] = useState(true);
+  const [tema, setTema] = useState<Tema>("system");
+  const [escuroAtivo, setEscuroAtivo] = useState(false);
 
   useEffect(() => {
-    const salvo = (localStorage.getItem(CHAVE) as Tema | null) ?? "dark";
+    const salvo = (localStorage.getItem(CHAVE) as Tema | null) ?? "system";
     setTema(salvo);
     setEscuroAtivo(aplicar(salvo));
   }, []);
@@ -44,7 +52,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setEscuroAtivo(aplicar(novo));
   }, []);
 
-  const valor = useMemo(() => ({ tema, definirTema, escuroAtivo }), [tema, definirTema, escuroAtivo]);
+  const valor = useMemo(
+    () => ({ tema, definirTema, escuroAtivo }),
+    [tema, definirTema, escuroAtivo],
+  );
   return <ThemeContext.Provider value={valor}>{children}</ThemeContext.Provider>;
 }
 

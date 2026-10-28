@@ -17,32 +17,20 @@ import { APP_SUBTITULO } from "@/constants";
 function Moldura({ children }: { children: React.ReactNode }) {
   const reduzir = useReducedMotion();
   return (
-    <div className="surface-gradient relative flex min-h-screen items-center justify-center px-4 py-10">
-      {/* Brilhos decorativos — mesma linguagem visual do site público. */}
-      <div
-        className="pointer-events-none absolute -top-32 left-1/2 size-96 -translate-x-1/2 rounded-full brand-gradient opacity-10 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 mesh-gradient opacity-50"
-        aria-hidden
-      />
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <motion.div
         variants={reduzir ? quieto.fadeInUp : fadeInUp}
         initial="initial"
         animate="animate"
-        className="glass-panel relative w-full max-w-md rounded-3xl p-8 shadow-elevated"
+        className="w-full max-w-md rounded-3xl border border-border/60 bg-card p-7 shadow-card sm:p-10"
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          <AppLogo
-            tamanho={56}
-            className="drop-shadow-[0_8px_24px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
-          />
+          <AppLogo tamanho={64} />
           <div>
-            <h1 className="font-display text-xl font-semibold tracking-tight">
+            <h1 className="font-display text-2xl font-semibold tracking-tight">
               Área de Lazer Biel
             </h1>
-            <p className="text-sm text-muted-foreground">{APP_SUBTITULO}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{APP_SUBTITULO}</p>
           </div>
         </div>
         <div className="mt-7">{children}</div>

@@ -1,11 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, LogOut, Menu, Moon, Sun, X } from "lucide-react";
-import { useState } from "react";
+import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
 
-import { fadeIn, pagina, quieto, springFisica } from "@/lib/motion";
-
+import { pagina, quieto } from "@/lib/motion";
 import { AppLogo, AppLogoCompleta } from "@/components/app/AppLogo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -16,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SinoNotificacoes } from "@/components/app/SinoNotificacoes";
 import { PaletaComandos } from "@/components/app/PaletaComandos";
 import { GRUPOS_NAVEGACAO, NAVEGACAO } from "@/constants/navegacao";
@@ -25,108 +24,66 @@ import { useTema } from "@/app/providers/ThemeProvider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { iniciais } from "@/utils/formatadores";
 
-/** Rota atual — único lugar onde decidimos "item ativo". */
-function usarItemAtivo(para: string, caminho: string): boolean {
+function itemAtivo(para: string, caminho: string): boolean {
   return para === "/" ? caminho === "/" : caminho.startsWith(para);
 }
 
-/* ------------------------------------------------------------------ */
-/* Rail de ícones (desktop): só ícones até xl; a partir de xl, com nome. */
-/* ------------------------------------------------------------------ */
-
-function RotaLateral() {
+function Navegacao({
+  aoNavegar,
+  compactavel = false,
+}: {
+  aoNavegar?: () => void;
+  compactavel?: boolean;
+}) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
   return (
-    <nav
-      className="flex flex-col items-center gap-1.5 xl:items-stretch xl:px-3"
-      aria-label="Navegação principal"
-    >
-      {NAVEGACAO.map((item) => {
-        const ativo = usarItemAtivo(item.para, caminho);
-        return (
-          <Tooltip key={item.para}>
-            <TooltipTrigger asChild>
-              <Link
-                to={item.para}
-                aria-label={item.label}
-                aria-current={ativo ? "page" : undefined}
-                className={cn(
-                  "group relative grid size-11 place-items-center rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  "xl:flex xl:h-11 xl:w-full xl:place-items-none xl:items-center xl:justify-start xl:gap-3 xl:px-3",
-                  ativo
-                    ? "bg-primary-soft text-primary shadow-soft"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  !ativo && "hover:scale-105 xl:hover:translate-x-0.5 xl:hover:scale-100",
-                )}
-              >
-                <item.icone
-                  className={cn(
-                    "size-[1.15rem] shrink-0 transition-transform duration-200",
-                    !ativo && "group-hover:scale-110",
-                  )}
-                  aria-hidden
-                />
-                <span className="hidden truncate text-sm font-medium xl:inline">{item.label}</span>
-                <span
-                  className={cn(
-                    "absolute -top-1 left-1/2 h-4 w-1 -translate-x-1/2 rounded-full brand-gradient transition-opacity xl:top-1/2 xl:-left-3 xl:h-6 xl:-translate-y-1/2 xl:translate-x-0 xl:rounded-r-full xl:rounded-l-none",
-                    ativo ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden
-                />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-medium">
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </nav>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Navegação agrupada — mantida para a gaveta do celular.              */
-/* ------------------------------------------------------------------ */
-
-function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
-  const caminho = useRouterState({ select: (estado) => estado.location.pathname });
-  return (
-    <nav className="space-y-5" aria-label="Navegação do menu">
+    <nav className="space-y-6" aria-label="Navegação principal">
       {GRUPOS_NAVEGACAO.map((grupo) => (
         <div key={grupo.rotulo} className="space-y-1">
-          <p className="px-3 pb-1 text-[0.65rem] font-bold tracking-[0.18em] text-muted-foreground/70 uppercase">
+          <p
+            className={cn(
+              "px-3 pb-1 text-xs font-medium text-muted-foreground",
+              compactavel && "lg:sr-only xl:not-sr-only xl:px-3 xl:pb-1",
+            )}
+          >
             {grupo.rotulo}
           </p>
           {grupo.itens.map((item) => {
-            const ativo = usarItemAtivo(item.para, caminho);
+            const ativo = itemAtivo(item.para, caminho);
             return (
-              <Link
-                key={item.para}
-                to={item.para}
-                onClick={aoNavegar}
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  ativo
-                    ? "bg-primary-soft text-primary shadow-soft"
-                    : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",
+              <Tooltip key={item.para}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.para}
+                    onClick={aoNavegar}
+                    aria-label={item.label}
+                    aria-current={ativo ? "page" : undefined}
+                    className={cn(
+                      "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      compactavel && "lg:justify-center lg:px-0 xl:justify-start xl:px-3",
+                      ativo
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                    )}
+                  >
+                    <item.icone
+                      className={cn("size-5 shrink-0", ativo && "text-primary")}
+                      aria-hidden
+                    />
+                    <span className={cn("truncate", compactavel && "lg:hidden xl:inline")}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                {compactavel && (
+                  <TooltipContent side="right" className="xl:hidden">
+                    {item.label}
+                  </TooltipContent>
                 )}
-              >
-                <span
-                  className={cn(
-                    "absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full brand-gradient transition-opacity",
-                    ativo ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden
-                />
-                <item.icone className="size-4.5 shrink-0" aria-hidden />
-                <span className="truncate">{item.label}</span>
-              </Link>
+              </Tooltip>
             );
           })}
         </div>
@@ -135,84 +92,16 @@ function Navegacao({ aoNavegar }: { aoNavegar?: () => void }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Pílulas da topbar (desktop): seções principais + menu "Mais".      */
-/* ------------------------------------------------------------------ */
-
-const PILULAS = NAVEGACAO.filter((item) =>
-  ["/", "/reservas", "/agenda", "/clientes", "/financeiro"].includes(item.para),
-) as (typeof NAVEGACAO)[number][];
-
-const MAIS = NAVEGACAO.filter((item) => !PILULAS.includes(item));
-
-function PilastraNavegacao() {
-  const caminho = useRouterState({ select: (estado) => estado.location.pathname });
-  const maisAtivo = MAIS.some((item) => usarItemAtivo(item.para, caminho));
-  return (
-    <nav
-      className="hidden shrink-0 items-center justify-center gap-1 self-center rounded-full border border-border/60 bg-card/50 p-1 backdrop-blur lg:flex"
-      aria-label="Seções principais"
-    >
-      {PILULAS.map((item) => {
-        const ativo = usarItemAtivo(item.para, caminho);
-        return (
-          <Link
-            key={item.para}
-            to={item.para}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200",
-              ativo
-                ? "bg-primary text-primary-foreground shadow-soft"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-            aria-current={ativo ? "page" : undefined}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(
-            "flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
-            maisAtivo
-              ? "bg-primary text-primary-foreground shadow-soft"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-          aria-label="Mais seções"
-        >
-          Mais
-          <ChevronDown className="size-3.5" aria-hidden />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="min-w-44">
-          {MAIS.map((item) => (
-            <DropdownMenuItem key={item.para} className="gap-2.5 text-sm" asChild>
-              <Link to={item.para}>
-                <item.icone className="size-4 text-muted-foreground" aria-hidden />
-                {item.label}
-              </Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </nav>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Avatar do administrador (canto direito da topbar).                  */
-/* ------------------------------------------------------------------ */
-
 function AvatarAdmin() {
   const { admin, encerrarSessao } = useAuth();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="rounded-full outline-none ring-primary/40 transition-transform duration-200 hover:scale-105 focus-visible:ring-2"
+        className="grid size-11 place-items-center rounded-full outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Menu do administrador"
       >
-        <Avatar className="size-9 ring-2 ring-primary/25">
-          <AvatarFallback className="brand-gradient text-xs font-bold text-primary-foreground">
+        <Avatar className="size-8">
+          <AvatarFallback className="bg-secondary text-xs font-semibold text-secondary-foreground">
             {iniciais(admin?.nome ?? "Biel")}
           </AvatarFallback>
         </Avatar>
@@ -237,146 +126,77 @@ function AvatarAdmin() {
   );
 }
 
-function PerfilRodape() {
-  const { admin, encerrarSessao } = useAuth();
-  return (
-    <div className="space-y-3">
-      <Separator />
-      <div className="flex items-center gap-3 px-1">
-        <Avatar className="size-9">
-          <AvatarFallback className="bg-primary-soft text-xs font-semibold text-primary">
-            {iniciais(admin?.nome ?? "Biel")}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1 leading-tight">
-          <p className="text-sm font-medium break-words" title={admin?.nome}>
-            {admin?.nome}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {admin ? CARGOS[admin.cargo] : ""}
-          </p>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Sair do sistema"
-              onClick={() => void encerrarSessao()}
-            >
-              <LogOut className="size-4" aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Sair</TooltipContent>
-        </Tooltip>
-      </div>
-    </div>
-  );
-}
-
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuAberto, setMenuAberto] = useState(false);
-  const { tema, definirTema, escuroAtivo } = useTema();
+  const { definirTema, escuroAtivo } = useTema();
   const reduzirMovimento = useReducedMotion();
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
+  const secao = NAVEGACAO.find((item) => itemAtivo(item.para, caminho));
 
   return (
-    <div className="relative flex min-h-screen bg-background">
-      <div
-        className="pointer-events-none fixed inset-0 mesh-gradient opacity-60 dark:opacity-40"
-        aria-hidden
-      />
-
-      {/* Rail — desktop: só ícones até xl; em telas largas mostra o nome ao lado. */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden flex-col items-center gap-4 border-r border-border/60 bg-sidebar/85 py-4 backdrop-blur-xl lg:flex lg:w-[4.5rem] xl:w-56">
+    <div className="flex min-h-screen bg-background">
+      <aside className="glass-panel fixed inset-y-0 left-0 z-20 hidden w-20 flex-col border-y-0 border-l-0 lg:flex xl:w-60">
         <Link
           to="/"
-          aria-label="Início — área de lazer Biel"
-          className="flex items-center gap-2.5 rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none xl:w-full xl:px-3"
+          aria-label="Início — Área de Lazer Biel"
+          className="mx-3 my-5 flex min-h-11 items-center justify-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:justify-start xl:px-2"
         >
-          <AppLogo tamanho={36} className="shrink-0 rounded-xl shadow-soft" />
-          <span className="hidden truncate text-sm font-bold tracking-tight xl:inline">
-            Área de Lazer
+          <AppLogo tamanho={36} className="shrink-0" />
+          <span className="hidden text-sm font-semibold tracking-tight xl:inline">
+            Área de Lazer Biel
           </span>
         </Link>
-        <div className="h-px w-8 bg-border/70 xl:w-auto xl:self-stretch xl:mx-3" aria-hidden />
-        <ScrollArea className="flex-1 xl:w-full">
-          <RotaLateral />
+        <ScrollArea className="min-h-0 flex-1 px-3 pb-6">
+          <Navegacao compactavel />
         </ScrollArea>
       </aside>
 
-      {/* Gaveta — celular/tablet */}
-      <AnimatePresence>
-        {menuAberto && (
-          <motion.div
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="fixed inset-0 z-40 bg-foreground/40 lg:hidden"
-            onClick={() => setMenuAberto(false)}
-          >
-            <motion.aside
-              initial={{ x: -288 }}
-              animate={{ x: 0 }}
-              exit={{ x: -288 }}
-              transition={reduzirMovimento ? { duration: 0 } : springFisica}
-              className="flex h-full w-72 flex-col border-r bg-card p-4"
-              onClick={(evento) => evento.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <AppLogoCompleta />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Fechar menu"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <X className="size-4" aria-hidden />
-                </Button>
-              </div>
-              <ScrollArea className="-mx-1 mt-6 flex-1 px-1">
-                <Navegacao aoNavegar={() => setMenuAberto(false)} />
-              </ScrollArea>
-              <PerfilRodape />
-            </motion.aside>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
+        <SheetContent
+          side="left"
+          className="flex w-72 flex-col rounded-r-3xl p-5 lg:hidden"
+          aria-describedby={undefined}
+        >
+          <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+          <div className="flex items-center justify-between pr-7">
+            <AppLogoCompleta compacto />
+          </div>
+          <ScrollArea className="mt-6 min-h-0 flex-1">
+            <Navegacao aoNavegar={() => setMenuAberto(false)} />
+          </ScrollArea>
+          <Button variant="ghost" className="justify-start" onClick={() => setMenuAberto(false)}>
+            <X className="size-4" aria-hidden /> Fechar menu
+          </Button>
+        </SheetContent>
+      </Sheet>
 
-      <div className="relative flex min-w-0 flex-1 flex-col lg:pl-[4.5rem] xl:pl-56">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/60 bg-background/70 px-3 backdrop-blur-xl sm:px-5 sm:gap-3">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-20 xl:pl-60">
+        <header className="glass-panel sticky top-0 z-30 flex min-h-16 items-center gap-2 border-x-0 border-t-0 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
             size="icon"
             className="shrink-0 lg:hidden"
             aria-label="Abrir menu"
+            aria-expanded={menuAberto}
             onClick={() => setMenuAberto(true)}
           >
             <Menu className="size-5" aria-hidden />
           </Button>
-          <div className="shrink-0 lg:hidden">
-            <AppLogoCompleta compacto />
-          </div>
-
-          {/* Busca global única (Ctrl+K): reservas, clientes e páginas. */}
-          <div className="ml-auto min-w-0 md:mr-auto md:ml-0 md:flex-1 md:max-w-md">
+          <span className="hidden shrink-0 text-sm font-medium text-muted-foreground sm:inline">
+            {secao?.label ?? "Administração"}
+          </span>
+          <div className="ml-auto min-w-0 sm:w-64">
             <PaletaComandos />
           </div>
-
-          {/* Pílulas centrais (desktop) */}
-          <PilastraNavegacao />
-
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1">
             <SinoNotificacoes />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-xl"
                   aria-label={escuroAtivo ? "Ativar tema claro" : "Ativar tema escuro"}
-                  onClick={() => definirTema(tema === "dark" ? "light" : "dark")}
+                  onClick={() => definirTema(escuroAtivo ? "light" : "dark")}
                 >
                   {escuroAtivo ? (
                     <Sun className="size-4.5" aria-hidden />
@@ -390,9 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <AvatarAdmin />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
-          {/* Transição de rota: fade + slide sutil, saída mais rápida que a
-              entrada (ver src/lib/motion.ts). Nunca corte seco. */}
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={caminho}
@@ -400,7 +218,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="space-y-6"
+              className="space-y-7"
             >
               {children}
             </motion.div>
