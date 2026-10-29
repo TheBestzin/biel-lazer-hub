@@ -148,13 +148,17 @@ function PaginaReservas() {
   const [decisaoSolicitacao, setDecisaoSolicitacao] = useState<{
     solicitacao: Solicitacao;
     decisao: "aprovada" | "recusada";
+    abrirWhatsApp: boolean;
   } | null>(null);
 
   const decidirSolicitacao = useAcao(
-    ({ solicitacao, decisao }: { solicitacao: Solicitacao; decisao: "aprovada" | "recusada" }) =>
-      SolicitacoesService.decidir(solicitacao.id, decisao),
+    ({ solicitacao, decisao }: {
+      solicitacao: Solicitacao;
+      decisao: "aprovada" | "recusada";
+      abrirWhatsApp: boolean;
+    }) => SolicitacoesService.decidir(solicitacao.id, decisao, decisao === "aprovada"),
     {
-      sucesso: "Solicitação atualizada. O resultado do WhatsApp aparece no pedido.",
+      sucesso: "Solicitação atualizada. O status da notificação aparece no pedido.",
       invalidar: [chaves.solicitacoesSite, chaves.reservas, chaves.clientes, chaves.logs],
       aoConcluir: () => setDecisaoSolicitacao(null),
     },
@@ -367,7 +371,9 @@ function PaginaReservas() {
                           size="sm"
                           className="bg-success text-white hover:bg-success/90"
                           disabled={decidirSolicitacao.isPending}
-                          onClick={() => setDecisaoSolicitacao({ solicitacao, decisao: "aprovada" })}
+                          onClick={() =>
+                            setDecisaoSolicitacao({ solicitacao, decisao: "aprovada", abrirWhatsApp: false })
+                          }
                         >
                           <Check className="size-4" aria-hidden />
                           Aprovar
@@ -376,7 +382,9 @@ function PaginaReservas() {
                           size="sm"
                           variant="destructive"
                           disabled={decidirSolicitacao.isPending}
-                          onClick={() => setDecisaoSolicitacao({ solicitacao, decisao: "recusada" })}
+                          onClick={() =>
+                            setDecisaoSolicitacao({ solicitacao, decisao: "recusada", abrirWhatsApp: true })
+                          }
                         >
                           <X className="size-4" aria-hidden />
                           Recusar
@@ -595,12 +603,45 @@ function PaginaReservas() {
         titulo={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar esta solicitação?" : "Recusar esta solicitação?"}
         descricao={
           decisaoSolicitacao?.decisao === "aprovada"
-            ? "A data será reservada e uma reserva será criada no painel. Se a pessoa autorizou e o WhatsApp estiver configurado, ela receberá a confirmação automaticamente."
-            : "A solicitação será recusada. Se a pessoa autorizou e o WhatsApp estiver configurado, ela receberá a atualização automaticamente."
+            ? "A data será reservada e uma reserva será criada no painel."
+            : "A solicitação será recusada. Você pode escolher se quer avisar a pessoa pelo WhatsApp."
+        }
+        conteudo={
+          decisaoSolicitacao?.decisao === "recusada" ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-primary"
+                checked={decisaoSolicitacao.abrirWhatsApp}
+                onChange={(evento) =>
+                  setDecisaoSolicitacao((atual) =>
+                    atual ? { ...atual, abrirWhatsApp: evento.target.checked } : atual,
+                  )
+                }
+              />
+              <span>Abrir o WhatsApp com uma mensagem de recusa pronta. Você poderá revisar e decidir se envia; desmarque para não abrir a conversa.</span>
+            </label>
+          ) : null
         }
         confirmarLabel={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar pedido" : "Recusar pedido"}
         destrutivo={decisaoSolicitacao?.decisao === "recusada"}
-        aoConfirmar={() => decisaoSolicitacao && decidirSolicitacao.mutate(decisaoSolicitacao)}
+        aoConfirmar={() => {
+          if (!decisaoSolicitacao) return;
+          const decisao = decisaoSolicitacao;
+          const janelaWhatsApp =
+            decisao.decisao === "recusada" && decisao.abrirWhatsApp
+              ? window.open("about:blank", "_blank")
+              : null;
+          if (janelaWhatsApp) janelaWhatsApp.opener = null;
+          decidirSolicitacao.mutate(decisao, {
+            onSuccess: () => {
+              if (janelaWhatsApp) {
+                janelaWhatsApp.location.href = urlWhatsAppRecusa(decisao.solicitacao);
+              }
+            },
+            onError: () => janelaWhatsApp?.close(),
+          });
+        }}
       />
       <AppConfirmDialog
         aberto={Boolean(paraCancelar)}
@@ -624,6 +665,12 @@ function PaginaReservas() {
   );
 }
 
+function urlWhatsAppRecusa(solicitacao: Solicitacao): string {
+  const telefone = String(solicitacao.telefone ?? "").replace(/\D/g, "");
+  const mensagem = `Olá, ${solicitacao.nome}! Agradecemos pelo seu pedido de reserva para ${formatarData(solicitacao.data)}. Infelizmente, não poderemos confirmar essa solicitação. Agradecemos a compreensão. — Área de Lazer Biel.`;
+  return `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
+}
+
 function rotuloStatusWhatsApp(status: string): string {
   switch (status) {
     case "aceita":
@@ -636,6 +683,8 @@ function rotuloStatusWhatsApp(status: string): string {
       return "enviando";
     case "nao_autorizado":
       return "sem consentimento";
+    case "nao_enviado":
+      return "não enviada automaticamente";
     default:
       return status;
   }

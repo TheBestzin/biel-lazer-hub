@@ -105,16 +105,16 @@ export const SolicitacoesService = {
   },
 
   /** Decide a solicitação via callable autenticada, sem expor credenciais Meta no navegador. */
-  async decidir(id: string, decisao: "aprovada" | "recusada") {
+  async decidir(id: string, decisao: "aprovada" | "recusada", enviarWhatsApp = true) {
     const funcao = httpsCallable<
-      { id: string; decisao: "aprovada" | "recusada" },
+      { id: string; decisao: "aprovada" | "recusada"; enviarWhatsApp: boolean },
       {
         status: "aprovada" | "recusada";
         reservaId: string | null;
-        whatsappStatus: "aceita" | "falhou" | "nao_configurado" | "nao_autorizado";
+        whatsappStatus: "aceita" | "falhou" | "nao_configurado" | "nao_autorizado" | "nao_enviado";
       }
     >(getFunctions(getFirebaseAuth().app, "us-central1"), "decidirSolicitacao");
-    const resposta = await funcao({ id, decisao });
+    const resposta = await funcao({ id, decisao, enviarWhatsApp });
     return resposta.data;
   },
 

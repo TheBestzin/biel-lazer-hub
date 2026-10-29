@@ -113,12 +113,15 @@ export const decidirSolicitacao = onCall(
       );
     }
 
-    const { id, decisao } = request.data ?? {};
+    const { id, decisao, enviarWhatsApp = true } = request.data ?? {};
     if (typeof id !== "string" || !/^[A-Za-z0-9_-]{10,128}$/.test(id)) {
       throw new HttpsError("invalid-argument", "Solicitação inválida.");
     }
     if (decisao !== "aprovada" && decisao !== "recusada") {
       throw new HttpsError("invalid-argument", "Decisão inválida.");
+    }
+    if (typeof enviarWhatsApp !== "boolean") {
+      throw new HttpsError("invalid-argument", "Opção de envio do WhatsApp inválida.");
     }
 
     const solicitacaoRef = db.collection("solicitacoes").doc(id);
@@ -267,10 +270,12 @@ export const decidirSolicitacao = onCall(
       return { solicitacao, reservaId };
     });
 
-    const whatsappStatus = await enviarTemplateWhatsApp(solicitacao, decisao).catch((erro) => {
-      console.error("Falha ao enviar atualização WhatsApp da solicitação", erro);
-      return "falhou";
-    });
+    const whatsappStatus = enviarWhatsApp
+      ? await enviarTemplateWhatsApp(solicitacao, decisao).catch((erro) => {
+          console.error("Falha ao enviar atualização WhatsApp da solicitação", erro);
+          return "falhou";
+        })
+      : "nao_enviado";
     await solicitacaoRef
       .update({ whatsappStatus, whatsappUpdatedAt: FieldValue.serverTimestamp() })
       .catch((erro) => console.error("Não foi possível salvar o resultado do WhatsApp", erro));

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +18,7 @@ interface AppConfirmDialogProps {
   descricao: string;
   confirmarLabel?: string;
   destrutivo?: boolean;
+  conteudo?: ReactNode;
   aoConfirmar: () => void;
 }
 
@@ -27,6 +29,7 @@ export function AppConfirmDialog({
   descricao,
   confirmarLabel = "Confirmar",
   destrutivo,
+  conteudo,
   aoConfirmar,
 }: AppConfirmDialogProps) {
   return (
@@ -35,6 +38,7 @@ export function AppConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{titulo}</AlertDialogTitle>
           <AlertDialogDescription>{descricao}</AlertDialogDescription>
+          {conteudo}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
