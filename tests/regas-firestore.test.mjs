@@ -13,6 +13,7 @@
  */
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { serverTimestamp } from "firebase/firestore";
 
 import {
   assertFails,
@@ -136,14 +137,133 @@ test("recusa solicitação em data já ocupada (choque de datas)", async () => {
   await assertFails(db.collection("solicitacoes").add(solicitacaoValida));
 });
 
-test("somente admin lê solicitações e alterações são exclusivas da Cloud Function", async () => {
+test("admin pode recusar solicitação pendente sem criar reserva", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("solicitacoes").doc("pedido-recusa").set(solicitacaoValida);
+  });
+  const db = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
+  await assertSucceeds(
+    db.collection("solicitacoes").doc("pedido-recusa").update({
+      status: "recusada",
+      decidedAt: serverTimestamp(),
+      decidedBy: "admin-uid",
+    }),
+  );
+});
+
+test("admin legado com documento ativo pode recusar solicitação sem claim", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("admins").doc("admin-legado").set({ ativo: true });
+    await ctx.firestore().collection("solicitacoes").doc("pedido-legado").set(solicitacaoValida);
+  });
+  const db = env.authenticatedContext("admin-legado", semAdmin()).firestore();
+  await assertSucceeds(db.collection("solicitacoes").doc("pedido-legado").get());
+  await assertSucceeds(
+    db.collection("solicitacoes").doc("pedido-legado").update({
+      status: "recusada",
+      decidedAt: serverTimestamp(),
+      decidedBy: "admin-legado",
+    }),
+  );
+});
+
+test("admin só aprova solicitação em transação com reserva, cliente e data ocupada", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("solicitacoes").doc("pedido-aprova").set(solicitacaoValida);
+  });
+  const db = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
+  const pedido = db.collection("solicitacoes").doc("pedido-aprova");
+  const cliente = db.collection("clientes").doc("cliente-1");
+  const reserva = db.collection("reservas").doc("reserva-1");
+  const ocupacao = db.collection("datas_ocupadas").doc(solicitacaoValida.data);
+  const agora = serverTimestamp();
+  const batch = db.batch();
+  batch.set(cliente, {
+    nome: solicitacaoValida.nome,
+    cpf: "",
+    telefone: solicitacaoValida.telefone,
+    status: "confiavel",
+    observacoes: "Cadastro feito pelo site.",
+    tags: ["Site"],
+    favorito: false,
+    totalReservas: 1,
+    totalGasto: 0,
+    ultimaReserva: solicitacaoValida.data,
+    deleted: false,
+    createdBy: "admin-uid",
+    updatedBy: "admin-uid",
+    createdAt: agora,
+    updatedAt: agora,
+  });
+  batch.set(reserva, {
+    solicitacaoId: pedido.id,
+    clienteId: cliente.id,
+    clienteNome: solicitacaoValida.nome,
+    clienteTelefone: solicitacaoValida.telefone,
+    data: solicitacaoValida.data,
+    entrada: "08:00",
+    saida: "22:00",
+    valor: 350,
+    valorPago: 0,
+    statusPagamento: "pendente",
+    statusReserva: "reservada",
+    observacoes: solicitacaoValida.observacoes,
+    checklist: [],
+    deleted: false,
+    createdBy: "admin-uid",
+    updatedBy: "admin-uid",
+    createdAt: agora,
+    updatedAt: agora,
+  });
+  batch.set(ocupacao, {
+    status: "reservada",
+    solicitacaoId: pedido.id,
+    reservaId: reserva.id,
+    updatedAt: agora,
+  });
+  batch.update(pedido, {
+    status: "aprovada",
+    reservaId: reserva.id,
+    decidedAt: agora,
+    decidedBy: "admin-uid",
+  });
+  await assertSucceeds(batch.commit());
+});
+
+test("admin não aprova sem reserva e data ocupada correspondentes", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx
+      .firestore()
+      .collection("solicitacoes")
+      .doc("pedido-sem-reserva")
+      .set(solicitacaoValida);
+  });
+  const db = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
+  await assertFails(
+    db.collection("solicitacoes").doc("pedido-sem-reserva").update({
+      status: "aprovada",
+      reservaId: "reserva-inexistente",
+      decidedAt: serverTimestamp(),
+      decidedBy: "admin-uid",
+    }),
+  );
+});
+
+test("somente admin lê solicitações e não pode editar nem apagar pedidos", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().collection("solicitacoes").doc("req1").set(solicitacaoValida);
   });
   const dbAnon = env.unauthenticatedContext().firestore();
   const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
   await assertSucceeds(dbAdmin.collection("solicitacoes").doc("req1").get());
-  await assertFails(dbAdmin.collection("solicitacoes").doc("req1").update({ status: "aprovada" }));
+  await assertFails(
+    dbAdmin.collection("solicitacoes").doc("req1").update({
+      status: "aprovada",
+      reservaId: "reserva-inexistente",
+      decidedAt: serverTimestamp(),
+      decidedBy: "admin-uid",
+    }),
+  );
   await assertFails(dbAdmin.collection("solicitacoes").doc("req1").delete());
   await assertFails(dbAnon.collection("solicitacoes").get());
   await assertFails(dbAnon.collection("solicitacoes").doc("req1").get());
@@ -162,7 +282,7 @@ test("admin (claim) lê e escreve coleções administrativas e cria datas_ocupad
     db
       .collection("datas_ocupadas")
       .doc("2026-12-20")
-      .set({ status: "reservada", updatedAt: "2026-10-17T10:00:00Z" }),
+      .set({ status: "bloqueada", updatedAt: serverTimestamp() }),
   );
 });
 

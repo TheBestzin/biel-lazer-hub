@@ -18,11 +18,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Verifica-se no token (claim), não pelo documento — o cliente
-    // nunca deveria conseguir emitir o próprio poder da sua versão.
+    // O claim é emitido pelo Admin SDK; admins provisionados no painel
+    // também são aceitos quando seu documento está ativo.
     function eAdmin() {
       return request.auth != null
         && request.auth.token.admin == true;
+    }
+
+    // A autorização administrativa da UI também cobre os admins antigos
+    // provisionados por um documento ativo em admins/{uid}.
+    function eAdminSolicitacoes() {
+      return eAdmin()
+        || (request.auth != null
+          && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+          && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.ativo == true);
     }
 
     // Validação de campos aceitos na criação da solicitação do visitante.
@@ -64,9 +73,61 @@ service cloud.firestore {
     // Coleções administrativas — somente admin.
     match /reservas/{id} {
       allow read, write: if eAdmin();
+      allow read: if eAdminSolicitacoes();
+      allow create: if eAdmin()
+        || (eAdminSolicitacoes()
+          && request.resource.data.keys().hasOnly(
+               ['clienteId', 'clienteNome', 'clienteTelefone', 'data', 'entrada', 'saida',
+                'valor', 'valorPago', 'statusPagamento', 'statusReserva', 'observacoes',
+                'checklist', 'solicitacaoId', 'deleted', 'createdBy', 'updatedBy', 'createdAt', 'updatedAt'])
+          && (eAdmin() || request.resource.data.solicitacaoId is string)
+          && request.resource.data.clienteId is string
+          && request.resource.data.clienteNome is string
+          && request.resource.data.clienteTelefone is string
+          && request.resource.data.data is string
+          && request.resource.data.data.matches('^2[0-9]{3}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.solicitacaoId is string
+          && existsAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId))
+          && getAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId)).data.status == 'aprovada'
+          && getAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId)).data.reservaId == id
+          && request.resource.data.statusReserva == 'reservada'
+          && request.resource.data.statusPagamento == 'pendente'
+          && request.resource.data.valorPago == 0
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.deleted == false
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/datas_ocupadas/$(request.resource.data.data))
+          && getAfter(/databases/$(database)/documents/datas_ocupadas/$(request.resource.data.data)).data.status == 'reservada'
+          && getAfter(/databases/$(database)/documents/datas_ocupadas/$(request.resource.data.data)).data.reservaId == id
+          && existsAfter(/databases/$(database)/documents/clientes/$(request.resource.data.clienteId))
+          && getAfter(/databases/$(database)/documents/clientes/$(request.resource.data.clienteId)).data.telefone == request.resource.data.clienteTelefone);
     }
     match /clientes/{id} {
       allow read, write: if eAdmin();
+      allow read: if eAdminSolicitacoes();
+      allow create: if eAdminSolicitacoes()
+        && request.resource.data.keys().hasOnly(
+             ['nome', 'cpf', 'telefone', 'status', 'observacoes', 'tags', 'favorito',
+              'totalReservas', 'totalGasto', 'ultimaReserva', 'deleted', 'createdBy',
+              'updatedBy', 'createdAt', 'updatedAt'])
+        && request.resource.data.nome is string
+        && request.resource.data.telefone is string
+        && request.resource.data.status == 'confiavel'
+        && request.resource.data.totalReservas == 1
+        && request.resource.data.totalGasto == 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.deleted == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if eAdminSolicitacoes()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['totalReservas', 'ultimaReserva', 'updatedBy', 'updatedAt'])
+        && request.resource.data.totalReservas == resource.data.totalReservas + 1
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
     }
     match /financeiro/{id} {
       allow read, write: if eAdmin();
@@ -76,6 +137,7 @@ service cloud.firestore {
     }
     match /bloqueios/{id} {
       allow read, write: if eAdmin();
+      allow read: if eAdminSolicitacoes();
     }
     match /lista_espera/{id} {
       allow read, write: if eAdmin();
@@ -89,13 +151,13 @@ service cloud.firestore {
     match /logs/{id} {
       // Logs só nascem (do próprio usuário autenticado e admin).
       // Ninguém edita; ninguém apaga (nem mesmo o admin).
-      allow create: if eAdmin()
+      allow create: if eAdminSolicitacoes()
         && request.resource.data.usuario == request.auth.uid
         && request.resource.data.keys().hasOnly(
              ['usuario', 'usuarioNome', 'acao', 'colecao', 'documento',
               'descricao', 'antes', 'depois', 'deleted', 'createdBy',
               'updatedBy', 'createdAt', 'updatedAt']);
-      allow read: if eAdmin();
+      allow read: if eAdminSolicitacoes();
       allow update, delete: if false;
     }
 
@@ -121,10 +183,21 @@ service cloud.firestore {
     // Nenhum dado pessoal é tocado aqui.
     match /datas_ocupadas/{data} {
       allow get, list: if true;
-      allow create: if eAdmin()
-        && data.matches("^2[0-9]{3}-[0-9]{2}-[0-9]{2}$")
-        && request.resource.data.keys().hasOnly(['status', 'updatedAt'])
-        && request.resource.data.status in ['reservada', 'bloqueada'];
+      allow create: if (eAdmin()
+          && data.matches("^2[0-9]{3}-[0-9]{2}-[0-9]{2}$")
+          && request.resource.data.keys().hasOnly(['status', 'updatedAt'])
+          && request.resource.data.status in ['reservada', 'bloqueada'])
+        || (eAdminSolicitacoes()
+          && data.matches("^2[0-9]{3}-[0-9]{2}-[0-9]{2}$")
+          && request.resource.data.keys().hasOnly(['status', 'solicitacaoId', 'reservaId', 'updatedAt'])
+          && request.resource.data.status == 'reservada'
+          && request.resource.data.solicitacaoId is string
+          && request.resource.data.reservaId is string
+          && request.resource.data.updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId))
+          && getAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId)).data.status == 'aprovada'
+          && getAfter(/databases/$(database)/documents/solicitacoes/$(request.resource.data.solicitacaoId)).data.reservaId == request.resource.data.reservaId
+          && existsAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)));
       allow update: if eAdmin()
         && request.resource.data.keys().hasOnly(['status', 'updatedAt'])
         && request.resource.data.status in ['reservada', 'bloqueada'];
@@ -146,10 +219,26 @@ service cloud.firestore {
           || !('whatsappOptIn' in request.resource.data.keys()))
         && request.resource.data.keys().hasOnly(
              ['nome', 'telefone', 'data', 'convidados', 'observacoes', 'whatsappOptIn', 'createdAt']);
-      allow read: if eAdmin();
-      // Decisões/remoção usam Cloud Function privilegiada para preservar
-      // reserva + bloqueio de data como uma operação atômica.
-      allow update, delete: if false;
+      allow read: if eAdminSolicitacoes();
+      allow update: if eAdminSolicitacoes()
+        && (!('status' in resource.data.keys()) || resource.data.status == 'pendente')
+        && request.resource.data.status in ['aprovada', 'recusada']
+        && request.resource.data.decidedBy == request.auth.uid
+        && request.resource.data.decidedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['status', 'reservaId', 'decidedAt', 'decidedBy'])
+        && request.resource.data.keys().hasOnly(
+             ['nome', 'telefone', 'data', 'convidados', 'observacoes', 'whatsappOptIn', 'createdAt',
+              'status', 'reservaId', 'decidedAt', 'decidedBy'])
+        && (request.resource.data.status == 'recusada'
+          ? !('reservaId' in request.resource.data.keys())
+          : request.resource.data.reservaId is string
+            && existsAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId))
+            && getAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.data == resource.data.data
+            && existsAfter(/databases/$(database)/documents/datas_ocupadas/$(resource.data.data))
+            && getAfter(/databases/$(database)/documents/datas_ocupadas/$(resource.data.data)).data.status == 'reservada'
+            && getAfter(/databases/$(database)/documents/datas_ocupadas/$(resource.data.data)).data.reservaId == request.resource.data.reservaId);
+      allow delete: if false;
     }
   }
 }

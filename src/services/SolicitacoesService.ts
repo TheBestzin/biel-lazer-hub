@@ -8,11 +8,24 @@
  *   (regras) rejeita campos extras, tipos inválidos, limite de
  *   convidados e datas já ocupadas.
  *
- * Envio nunca escrivre diretamente em `reservas`/`clientes` — isso é
- * papel do admin ao aprovar (Fase 3, em transação).
+ * Somente administradores podem decidir as solicitações. Aprovações
+ * gravam reserva, data ocupada e cliente numa transação do Firestore.
  */
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  where,
+  type DocumentReference,
+} from "firebase/firestore";
+import { CHECKLIST_PADRAO, CONFIG_DOC_ID } from "@/constants";
 import { getDb, limitar } from "@/firebase/firestore";
 import { getFirebaseAuth } from "@/firebase/config";
 import { validarTelefone, apenasDigitos } from "@/utils/documentos";
@@ -104,18 +117,219 @@ export const SolicitacoesService = {
     return ref.id;
   },
 
-  /** Decide a solicitação via callable autenticada, sem expor credenciais Meta no navegador. */
-  async decidir(id: string, decisao: "aprovada" | "recusada", enviarWhatsApp = true) {
-    const funcao = httpsCallable<
-      { id: string; decisao: "aprovada" | "recusada"; enviarWhatsApp: boolean },
-      {
-        status: "aprovada" | "recusada";
-        reservaId: string | null;
-        whatsappStatus: "aceita" | "falhou" | "nao_configurado" | "nao_autorizado" | "nao_enviado";
+  /** Decide no Firestore sem depender de Cloud Functions ou do plano Blaze. */
+  async decidir(
+    id: string,
+    decisao: "aprovada" | "recusada",
+    autor: string,
+    autorNome: string,
+  ): Promise<{ status: "aprovada" | "recusada"; reservaId: string | null }> {
+    const usuario = getFirebaseAuth().currentUser;
+    if (!usuario || usuario.uid !== autor) {
+      throw new Error("Entre novamente no painel para decidir esta solicitação.");
+    }
+    if (!/^[A-Za-z0-9_-]{10,128}$/.test(id)) throw new Error("Solicitação inválida.");
+
+    const db = getDb();
+    const solicitacaoRef = doc(db, "solicitacoes", id);
+    const solicitacaoInicialSnap = await getDoc(solicitacaoRef);
+    if (!solicitacaoInicialSnap.exists()) throw new Error("Solicitação não encontrada.");
+    const solicitacaoInicial = solicitacaoInicialSnap.data() as Solicitacao;
+    if (solicitacaoInicial.status && solicitacaoInicial.status !== "pendente") {
+      throw new Error("Esta solicitação já foi decidida.");
+    }
+
+    let reservaRef: DocumentReference | null = null;
+    let clienteRef: DocumentReference | null = null;
+    let ocupacaoRef: DocumentReference | null = null;
+    let configuracaoRef: DocumentReference | null = null;
+
+    if (decisao === "aprovada") {
+      const data = solicitacaoInicial.data;
+      const telefone = apenasDigitos(solicitacaoInicial.telefone ?? "");
+      const nome = String(solicitacaoInicial.nome ?? "").trim();
+      const partesData = /^(2\d{3})-(\d{2})-(\d{2})$/.exec(data ?? "");
+      const dataUTC = partesData
+        ? new Date(
+            Date.UTC(Number(partesData[1]), Number(partesData[2]) - 1, Number(partesData[3])),
+          )
+        : null;
+      if (
+        !dataUTC ||
+        dataUTC.getUTCFullYear() !== Number(partesData?.[1]) ||
+        dataUTC.getUTCMonth() !== Number(partesData?.[2]) - 1 ||
+        dataUTC.getUTCDate() !== Number(partesData?.[3]) ||
+        !validarTelefone(telefone) ||
+        nome.length < 3 ||
+        nome.length > 120 ||
+        !Number.isInteger(solicitacaoInicial.convidados) ||
+        solicitacaoInicial.convidados < 1 ||
+        solicitacaoInicial.convidados > 200 ||
+        (solicitacaoInicial.observacoes ?? "").length > 500
+      ) {
+        throw new Error("Os dados desta solicitação são inválidos.");
       }
-    >(getFunctions(getFirebaseAuth().app, "us-central1"), "decidirSolicitacao");
-    const resposta = await funcao({ id, decisao, enviarWhatsApp });
-    return resposta.data;
+
+      const [reservasSnap, bloqueiosSnap, clientesSnap, ocupacaoSnap] = await Promise.all([
+        getDocs(query(collection(db, "reservas"), where("data", "==", data))),
+        getDocs(query(collection(db, "bloqueios"), where("data", "==", data))),
+        getDocs(query(collection(db, "clientes"), where("telefone", "==", telefone))),
+        getDoc(doc(db, "datas_ocupadas", data)),
+      ]);
+      if (
+        reservasSnap.docs.some((reserva) => {
+          const dados = reserva.data();
+          return !dados.deleted && dados.statusReserva !== "cancelada";
+        })
+      ) {
+        throw new Error("Esta data já possui uma reserva ativa.");
+      }
+      if (
+        ocupacaoSnap.exists() ||
+        bloqueiosSnap.docs.some((bloqueio) => !bloqueio.data().deleted)
+      ) {
+        throw new Error("Esta data está bloqueada ou ocupada e não pode receber reservas.");
+      }
+
+      const cliente = clientesSnap.docs.find((item) => !item.data().deleted);
+      clienteRef = cliente?.ref ?? doc(collection(db, "clientes"));
+      reservaRef = doc(collection(db, "reservas"));
+      ocupacaoRef = doc(db, "datas_ocupadas", data);
+      configuracaoRef = doc(db, "configuracoes", CONFIG_DOC_ID);
+    }
+
+    const logRef = doc(collection(db, "logs"));
+    const agora = serverTimestamp();
+    return runTransaction(db, async (tx) => {
+      const solicitacaoSnap = await tx.get(solicitacaoRef);
+      if (!solicitacaoSnap.exists()) throw new Error("Solicitação não encontrada.");
+      const solicitacao = solicitacaoSnap.data() as Solicitacao;
+      if (solicitacao.status && solicitacao.status !== "pendente") {
+        throw new Error("Esta solicitação já foi decidida.");
+      }
+
+      let reservaId: string | null = null;
+      if (decisao === "aprovada") {
+        if (!reservaRef || !clienteRef || !ocupacaoRef || !configuracaoRef) {
+          throw new Error("Não foi possível preparar a reserva.");
+        }
+        const [ocupacaoSnap, configuracaoSnap, clienteSnap] = await Promise.all([
+          tx.get(ocupacaoRef),
+          tx.get(configuracaoRef),
+          tx.get(clienteRef),
+        ]);
+        if (ocupacaoSnap.exists()) throw new Error("Esta data já foi reservada ou bloqueada.");
+        const cliente = clienteSnap.exists() ? clienteSnap.data() : null;
+        if (cliente?.deleted)
+          throw new Error(
+            "O cadastro deste cliente foi alterado. Atualize os pedidos e tente novamente.",
+          );
+        if (cliente?.status === "nao_alugar") {
+          throw new Error("Este cliente está marcado para não alugar.");
+        }
+
+        const configuracao = configuracaoSnap.data() ?? {};
+        const entrada =
+          typeof configuracao.entradaPadrao === "string" ? configuracao.entradaPadrao : "08:00";
+        const saida =
+          typeof configuracao.saidaPadrao === "string" ? configuracao.saidaPadrao : "22:00";
+        if (
+          !/^([01]\d|2[0-3]):[0-5]\d$/.test(entrada) ||
+          !/^([01]\d|2[0-3]):[0-5]\d$/.test(saida) ||
+          entrada >= saida
+        ) {
+          throw new Error(
+            "Os horários padrão estão inválidos. Corrija as configurações antes de aprovar.",
+          );
+        }
+        const valor =
+          typeof configuracao.valorPadrao === "number" &&
+          Number.isFinite(configuracao.valorPadrao) &&
+          configuracao.valorPadrao >= 0
+            ? configuracao.valorPadrao
+            : 350;
+        const data = solicitacao.data;
+        const nome = String(solicitacao.nome ?? "").trim();
+        const telefone = apenasDigitos(solicitacao.telefone ?? "");
+        const nomeCliente = String(cliente?.nome ?? nome);
+
+        tx.set(ocupacaoRef, {
+          status: "reservada",
+          solicitacaoId: id,
+          reservaId: reservaRef.id,
+          updatedAt: agora,
+        });
+        if (cliente) {
+          tx.update(clienteRef, {
+            totalReservas: increment(1),
+            ultimaReserva: data,
+            updatedBy: autor,
+            updatedAt: agora,
+          });
+        } else {
+          tx.set(clienteRef, {
+            nome,
+            cpf: "",
+            telefone,
+            status: "confiavel",
+            observacoes: "Cadastro feito pelo site.",
+            tags: ["Site"],
+            favorito: false,
+            totalReservas: 1,
+            totalGasto: 0,
+            ultimaReserva: data,
+            deleted: false,
+            createdBy: autor,
+            updatedBy: autor,
+            createdAt: agora,
+            updatedAt: agora,
+          });
+        }
+        tx.set(reservaRef, {
+          solicitacaoId: id,
+          clienteId: clienteRef.id,
+          clienteNome: nomeCliente,
+          clienteTelefone: telefone,
+          data,
+          entrada,
+          saida,
+          valor,
+          valorPago: 0,
+          statusPagamento: "pendente",
+          statusReserva: "reservada",
+          observacoes: String(solicitacao.observacoes ?? ""),
+          checklist: CHECKLIST_PADRAO.map((label, indice) => ({
+            id: `item-${indice}`,
+            label,
+            concluido: false,
+          })),
+          deleted: false,
+          createdBy: autor,
+          updatedBy: autor,
+          createdAt: agora,
+          updatedAt: agora,
+        });
+        reservaId = reservaRef.id;
+      }
+
+      tx.update(solicitacaoRef, {
+        status: decisao,
+        ...(reservaId ? { reservaId } : {}),
+        decidedAt: agora,
+        decidedBy: autor,
+      });
+      tx.set(logRef, {
+        usuario: autor,
+        usuarioNome: autorNome,
+        acao: decisao === "aprovada" ? "aprovar_solicitacao" : "recusar_solicitacao",
+        colecao: "solicitacoes",
+        documento: id,
+        descricao: `${decisao === "aprovada" ? "Aprovou" : "Recusou"} solicitação de ${solicitacao.nome}`,
+        createdAt: agora,
+      });
+
+      return { status: decisao, reservaId };
+    });
   },
 
   /** Lado admin: lista solicitações mais recentes primeiro. */

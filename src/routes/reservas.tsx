@@ -152,13 +152,19 @@ function PaginaReservas() {
   } | null>(null);
 
   const decidirSolicitacao = useAcao(
-    ({ solicitacao, decisao }: {
+    ({
+      solicitacao,
+      decisao,
+    }: {
       solicitacao: Solicitacao;
       decisao: "aprovada" | "recusada";
       abrirWhatsApp: boolean;
-    }) => SolicitacoesService.decidir(solicitacao.id, decisao, decisao === "aprovada"),
+    }) => {
+      if (!admin) throw new Error("Sessão de administrador não encontrada.");
+      return SolicitacoesService.decidir(solicitacao.id, decisao, admin.uid, admin.nome);
+    },
     {
-      sucesso: "Solicitação atualizada. O status da notificação aparece no pedido.",
+      sucesso: "Solicitação atualizada. O WhatsApp só será aberto se você confirmar.",
       invalidar: [chaves.solicitacoesSite, chaves.reservas, chaves.clientes, chaves.logs],
       aoConcluir: () => setDecisaoSolicitacao(null),
     },
@@ -306,7 +312,9 @@ function PaginaReservas() {
         ) : erroSolicitacoes ? (
           <Card>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-              <p className="text-sm text-destructive">Não foi possível carregar os pedidos do site.</p>
+              <p className="text-sm text-destructive">
+                Não foi possível carregar os pedidos do site.
+              </p>
               <Button variant="outline" size="sm" onClick={() => void recarregarSolicitacoes()}>
                 Tentar novamente
               </Button>
@@ -341,14 +349,6 @@ function PaginaReservas() {
                             ? "Recusada"
                             : "Aguardando análise"}
                       </span>
-                      {solicitacao.whatsappStatus && (
-                        <span
-                          className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                          title="O status do envio da notificação para este contato."
-                        >
-                          WhatsApp: {rotuloStatusWhatsApp(solicitacao.whatsappStatus)}
-                        </span>
-                      )}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
@@ -372,7 +372,11 @@ function PaginaReservas() {
                           className="bg-success text-white hover:bg-success/90"
                           disabled={decidirSolicitacao.isPending}
                           onClick={() =>
-                            setDecisaoSolicitacao({ solicitacao, decisao: "aprovada", abrirWhatsApp: false })
+                            setDecisaoSolicitacao({
+                              solicitacao,
+                              decisao: "aprovada",
+                              abrirWhatsApp: false,
+                            })
                           }
                         >
                           <Check className="size-4" aria-hidden />
@@ -383,7 +387,11 @@ function PaginaReservas() {
                           variant="destructive"
                           disabled={decidirSolicitacao.isPending}
                           onClick={() =>
-                            setDecisaoSolicitacao({ solicitacao, decisao: "recusada", abrirWhatsApp: true })
+                            setDecisaoSolicitacao({
+                              solicitacao,
+                              decisao: "recusada",
+                              abrirWhatsApp: true,
+                            })
                           }
                         >
                           <X className="size-4" aria-hidden />
@@ -600,7 +608,11 @@ function PaginaReservas() {
       <AppConfirmDialog
         aberto={Boolean(decisaoSolicitacao)}
         aoFechar={() => setDecisaoSolicitacao(null)}
-        titulo={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar esta solicitação?" : "Recusar esta solicitação?"}
+        titulo={
+          decisaoSolicitacao?.decisao === "aprovada"
+            ? "Aprovar esta solicitação?"
+            : "Recusar esta solicitação?"
+        }
         descricao={
           decisaoSolicitacao?.decisao === "aprovada"
             ? "A data será reservada e uma reserva será criada no painel."
@@ -619,11 +631,16 @@ function PaginaReservas() {
                   )
                 }
               />
-              <span>Abrir o WhatsApp com uma mensagem de recusa pronta. Você poderá revisar e decidir se envia; desmarque para não abrir a conversa.</span>
+              <span>
+                Abrir o WhatsApp com uma mensagem de recusa pronta. Você poderá revisar e decidir se
+                envia; desmarque para não abrir a conversa.
+              </span>
             </label>
           ) : null
         }
-        confirmarLabel={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar pedido" : "Recusar pedido"}
+        confirmarLabel={
+          decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar pedido" : "Recusar pedido"
+        }
         destrutivo={decisaoSolicitacao?.decisao === "recusada"}
         aoConfirmar={() => {
           if (!decisaoSolicitacao) return;
