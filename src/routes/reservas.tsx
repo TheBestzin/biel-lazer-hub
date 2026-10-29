@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   CalendarDays,
   CalendarPlus,
+  Check,
   CheckSquare,
   FileText,
   MessageCircle,
@@ -10,6 +11,7 @@ import {
   Search,
   Trash2,
   UsersRound,
+  X,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -52,6 +54,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { chaves, useAcao, useReservas, useSolicitacoesSite } from "@/hooks/useDados";
 import { LogService } from "@/services/LogService";
 import { ReservaService } from "@/services/ReservaService";
+import { SolicitacoesService, type Solicitacao } from "@/services/SolicitacoesService";
 import type { Reserva } from "@/types";
 import { chaveDia, formatarData, formatarDataExtenso, formatarMoeda } from "@/utils/formatadores";
 
@@ -142,6 +145,20 @@ function PaginaReservas() {
   const [paraCancelar, setParaCancelar] = useState<Reserva | null>(null);
   const [paraExcluir, setParaExcluir] = useState<Reserva | null>(null);
   const [mensagemAberta, setMensagemAberta] = useState(false);
+  const [decisaoSolicitacao, setDecisaoSolicitacao] = useState<{
+    solicitacao: Solicitacao;
+    decisao: "aprovada" | "recusada";
+  } | null>(null);
+
+  const decidirSolicitacao = useAcao(
+    ({ solicitacao, decisao }: { solicitacao: Solicitacao; decisao: "aprovada" | "recusada" }) =>
+      SolicitacoesService.decidir(solicitacao.id, decisao),
+    {
+      sucesso: "Solicitação atualizada. O resultado do WhatsApp aparece no pedido.",
+      invalidar: [chaves.solicitacoesSite, chaves.reservas, chaves.clientes, chaves.logs],
+      aoConcluir: () => setDecisaoSolicitacao(null),
+    },
+  );
 
   const cancelar = useAcao(
     async (reserva: Reserva) => {
@@ -305,9 +322,29 @@ function PaginaReservas() {
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold">{solicitacao.nome}</h3>
-                      <span className="rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning">
-                        Aguardando análise
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          solicitacao.status === "aprovada"
+                            ? "bg-success/10 text-success"
+                            : solicitacao.status === "recusada"
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-warning/10 text-warning"
+                        }`}
+                      >
+                        {solicitacao.status === "aprovada"
+                          ? "Aprovada"
+                          : solicitacao.status === "recusada"
+                            ? "Recusada"
+                            : "Aguardando análise"}
                       </span>
+                      {solicitacao.whatsappStatus && (
+                        <span
+                          className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+                          title="O status do envio da notificação para este contato."
+                        >
+                          WhatsApp: {rotuloStatusWhatsApp(solicitacao.whatsappStatus)}
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
@@ -323,16 +360,40 @@ function PaginaReservas() {
                       <p className="text-sm text-muted-foreground">{solicitacao.observacoes}</p>
                     )}
                   </div>
-                  <a
-                    href={`https://wa.me/55${solicitacao.telefone}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    aria-label={`Conversar com ${solicitacao.nome} pelo WhatsApp`}
-                  >
-                    <Phone className="size-4" aria-hidden />
-                    WhatsApp
-                  </a>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(!solicitacao.status || solicitacao.status === "pendente") && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="bg-success text-white hover:bg-success/90"
+                          disabled={decidirSolicitacao.isPending}
+                          onClick={() => setDecisaoSolicitacao({ solicitacao, decisao: "aprovada" })}
+                        >
+                          <Check className="size-4" aria-hidden />
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={decidirSolicitacao.isPending}
+                          onClick={() => setDecisaoSolicitacao({ solicitacao, decisao: "recusada" })}
+                        >
+                          <X className="size-4" aria-hidden />
+                          Recusar
+                        </Button>
+                      </>
+                    )}
+                    <a
+                      href={`https://wa.me/55${solicitacao.telefone}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                      aria-label={`Conversar com ${solicitacao.nome} pelo WhatsApp`}
+                    >
+                      <Phone className="size-4" aria-hidden />
+                      WhatsApp
+                    </a>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -529,6 +590,19 @@ function PaginaReservas() {
         reserva={checklist}
       />
       <AppConfirmDialog
+        aberto={Boolean(decisaoSolicitacao)}
+        aoFechar={() => setDecisaoSolicitacao(null)}
+        titulo={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar esta solicitação?" : "Recusar esta solicitação?"}
+        descricao={
+          decisaoSolicitacao?.decisao === "aprovada"
+            ? "A data será reservada e uma reserva será criada no painel. Se a pessoa autorizou e o WhatsApp estiver configurado, ela receberá a confirmação automaticamente."
+            : "A solicitação será recusada. Se a pessoa autorizou e o WhatsApp estiver configurado, ela receberá a atualização automaticamente."
+        }
+        confirmarLabel={decisaoSolicitacao?.decisao === "aprovada" ? "Aprovar pedido" : "Recusar pedido"}
+        destrutivo={decisaoSolicitacao?.decisao === "recusada"}
+        aoConfirmar={() => decisaoSolicitacao && decidirSolicitacao.mutate(decisaoSolicitacao)}
+      />
+      <AppConfirmDialog
         aberto={Boolean(paraCancelar)}
         aoFechar={() => setParaCancelar(null)}
         titulo="Cancelar esta reserva?"
@@ -548,6 +622,23 @@ function PaginaReservas() {
       />
     </div>
   );
+}
+
+function rotuloStatusWhatsApp(status: string): string {
+  switch (status) {
+    case "aceita":
+      return "aceita pela Meta";
+    case "falhou":
+      return "falhou";
+    case "nao_configurado":
+      return "não configurado";
+    case "enviando":
+      return "enviando";
+    case "nao_autorizado":
+      return "sem consentimento";
+    default:
+      return status;
+  }
 }
 
 function TabelaGrupo({

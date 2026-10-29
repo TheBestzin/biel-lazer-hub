@@ -12,7 +12,9 @@
  * papel do admin ao aprovar (Fase 3, em transação).
  */
 import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { getDb, limitar } from "@/firebase/firestore";
+import { getFirebaseAuth } from "@/firebase/config";
 import { validarTelefone, apenasDigitos } from "@/utils/documentos";
 
 export interface SolicitacaoPayload {
@@ -22,12 +24,16 @@ export interface SolicitacaoPayload {
   data: string;
   convidados: number;
   observacoes?: string;
+  whatsappOptIn?: boolean;
 }
 
 export interface Solicitacao extends SolicitacaoPayload {
   id: string;
   status?: "pendente" | "aprovada" | "recusada" | "lista_espera";
   createdAt?: string;
+  whatsappOptIn?: boolean;
+  whatsappStatus?: string;
+  reservaId?: string;
   observacoes: string;
 }
 
@@ -92,9 +98,24 @@ export const SolicitacoesService = {
       data: payload.data,
       convidados: Math.round(payload.convidados),
       observacoes: payload.observacoes ?? "",
+      whatsappOptIn: payload.whatsappOptIn,
       createdAt: serverTimestamp(),
     });
     return ref.id;
+  },
+
+  /** Decide a solicitação via callable autenticada, sem expor credenciais Meta no navegador. */
+  async decidir(id: string, decisao: "aprovada" | "recusada") {
+    const funcao = httpsCallable<
+      { id: string; decisao: "aprovada" | "recusada" },
+      {
+        status: "aprovada" | "recusada";
+        reservaId: string | null;
+        whatsappStatus: "aceita" | "falhou" | "nao_configurado" | "nao_autorizado";
+      }
+    >(getFunctions(getFirebaseAuth().app, "us-central1"), "decidirSolicitacao");
+    const resposta = await funcao({ id, decisao });
+    return resposta.data;
   },
 
   /** Lado admin: lista solicitações mais recentes primeiro. */
@@ -102,9 +123,13 @@ export const SolicitacoesService = {
     const snap = await getDocs(
       query(collection(getDb(), "solicitacoes"), orderBy("createdAt", "desc"), limitar(limite)),
     );
-    return snap.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as Partial<Solicitacao>),
-    })) as Solicitacao[];
+    return snap.docs.map((doc) => {
+      const dados = doc.data() as Partial<Solicitacao> & { whatsappStatus?: string };
+      return {
+        id: doc.id,
+        ...dados,
+        status: dados.status ?? "pendente",
+      } as Solicitacao;
+    });
   },
 };

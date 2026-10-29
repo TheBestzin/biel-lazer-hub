@@ -97,17 +97,26 @@ const solicitacaoValida = {
   data: "2026-12-20",
   convidados: 40,
   observacoes: "Aniversário",
+  whatsappOptIn: true,
 };
 
-test("anônimo cria solicitação válida", async () => {
+test("anônimo cria solicitação válida com consentimento opcional de WhatsApp", async () => {
   const db = env.unauthenticatedContext().firestore();
   await assertSucceeds(db.collection("solicitacoes").add(solicitacaoValida));
+  await assertSucceeds(
+    db.collection("solicitacoes").add({ ...solicitacaoValida, whatsappOptIn: false }),
+  );
+  const { whatsappOptIn: _optIn, ...semOptIn } = solicitacaoValida;
+  await assertSucceeds(db.collection("solicitacoes").add(semOptIn));
 });
 
 test("recusa campos extras, nome curto, telefone inválido e limite de convidados", async () => {
   const db = env.unauthenticatedContext().firestore();
   await assertFails(
     db.collection("solicitacoes").add({ ...solicitacaoValida, cpf: "12345678900" }),
+  );
+  await assertFails(
+    db.collection("solicitacoes").add({ ...solicitacaoValida, whatsappOptIn: "sim" }),
   );
   await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, nome: "M" }));
   await assertFails(db.collection("solicitacoes").add({ ...solicitacaoValida, telefone: "99999" }));
@@ -127,14 +136,18 @@ test("recusa solicitação em data já ocupada (choque de datas)", async () => {
   await assertFails(db.collection("solicitacoes").add(solicitacaoValida));
 });
 
-test("anônimo não altera nem lista solicitações alheias", async () => {
+test("somente admin lê solicitações e alterações são exclusivas da Cloud Function", async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().collection("solicitacoes").doc("req1").set(solicitacaoValida);
   });
-  const db = env.unauthenticatedContext().firestore();
-  await assertFails(db.collection("solicitacoes").get());
-  await assertFails(db.collection("solicitacoes").doc("req1").get());
-  await assertFails(db.collection("solicitacoes").doc("req1").update({ convidados: 10 }));
+  const dbAnon = env.unauthenticatedContext().firestore();
+  const dbAdmin = env.authenticatedContext("admin-uid", usuarioAdmin()).firestore();
+  await assertSucceeds(dbAdmin.collection("solicitacoes").doc("req1").get());
+  await assertFails(dbAdmin.collection("solicitacoes").doc("req1").update({ status: "aprovada" }));
+  await assertFails(dbAdmin.collection("solicitacoes").doc("req1").delete());
+  await assertFails(dbAnon.collection("solicitacoes").get());
+  await assertFails(dbAnon.collection("solicitacoes").doc("req1").get());
+  await assertFails(dbAnon.collection("solicitacoes").doc("req1").update({ convidados: 10 }));
 });
 
 /* ── Admin com claim ────────────────────────────────────────── */

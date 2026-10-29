@@ -17,6 +17,12 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Firebase Functions local parameters and emulator secrets
+functions/.env
+functions/.env.*
+!functions/.env.example
+functions/.secret.local
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

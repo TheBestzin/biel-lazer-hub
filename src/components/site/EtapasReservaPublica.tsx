@@ -408,6 +408,8 @@ export function EtapaConfirmacao({
   erro,
   aceiteLGPD,
   aoMudarAceiteLGPD,
+  aceiteWhatsApp,
+  aoMudarAceiteWhatsApp,
   aoVoltar,
   aoConfirmar,
 }: {
@@ -424,6 +426,8 @@ export function EtapaConfirmacao({
   erro: string | null;
   aceiteLGPD: boolean;
   aoMudarAceiteLGPD: (valor: boolean) => void;
+  aceiteWhatsApp: boolean;
+  aoMudarAceiteWhatsApp: (valor: boolean) => void;
   aoVoltar: () => void;
   aoConfirmar: () => void;
 }) {
@@ -467,7 +471,7 @@ export function EtapaConfirmacao({
         ))}
       </div>
 
-      {/* Consentimento LGPD — uma única finalidade: contato para a reserva. */}
+      {/* Consentimentos separados para contato e notificações WhatsApp. */}
       <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/40 p-4">
         <Checkbox
           id="publico-lgpd"
@@ -477,10 +481,27 @@ export function EtapaConfirmacao({
           aria-describedby="publico-lgpd-nota"
         />
         <label htmlFor="publico-lgpd" className="cursor-pointer text-sm text-muted-foreground">
-          Autorizo o uso do meu nome e WhatsApp <strong className="text-foreground">apenas</strong>{" "}
-          para contato sobre esta reserva (LGPD). Não pedimos CPF neste formulário.
+          Autorizo o uso do meu nome e WhatsApp para atendimento desta solicitação, conforme a
+          política de privacidade. Não pedimos CPF neste formulário.
           <span id="publico-lgpd-nota" className="sr-only">
             Selecione esta caixa para poder enviar a reserva.
+          </span>
+        </label>
+      </div>
+      <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/40 p-4">
+        <Checkbox
+          id="publico-whatsapp-optin"
+          checked={aceiteWhatsApp}
+          onCheckedChange={(marcado) => aoMudarAceiteWhatsApp(marcado === true)}
+          className="mt-0.5"
+          aria-describedby="publico-whatsapp-nota"
+        />
+        <label htmlFor="publico-whatsapp-optin" className="cursor-pointer text-sm text-muted-foreground">
+          Autorizo a Área de Lazer Biel a enviar pelo WhatsApp atualizações sobre esta solicitação,
+          inclusive a resposta de aprovação ou recusa. Esse consentimento é opcional e pode ser
+          revogado.
+          <span id="publico-whatsapp-nota" className="sr-only">
+            Autorize notificações pelo WhatsApp para receber a resposta automaticamente.
           </span>
         </label>
       </div>

@@ -141,9 +141,15 @@ service cloud.firestore {
         && dataEstaLivre()
         && request.resource.data.observacoes is string
         && request.resource.data.observacoes.size() <= 500
+        && (request.resource.data.whatsappOptIn == true
+          || request.resource.data.whatsappOptIn == false
+          || !('whatsappOptIn' in request.resource.data.keys()))
         && request.resource.data.keys().hasOnly(
-             ['nome', 'telefone', 'data', 'convidados', 'observacoes', 'createdAt']);
-      allow read, update, delete: if eAdmin();
+             ['nome', 'telefone', 'data', 'convidados', 'observacoes', 'whatsappOptIn', 'createdAt']);
+      allow read: if eAdmin();
+      // Decisões/remoção usam Cloud Function privilegiada para preservar
+      // reserva + bloqueio de data como uma operação atômica.
+      allow update, delete: if false;
     }
   }
 }
