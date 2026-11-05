@@ -1,5 +1,15 @@
-import { COLECOES, atualizar, criar, listar } from "@/firebase/firestore";
+import { COLECOES, atualizar, criar, listar, obter } from "@/firebase/firestore";
+import { DatasOcupadasService } from "@/services/SolicitacoesService";
 import type { Bloqueio, ListaEsperaItem, MotivoBloqueio } from "@/types";
+
+/** Repassa a ocupação do bloqueio para o calendário público do site. */
+async function sincronizarCalendarioPublico(data: string): Promise<void> {
+  try {
+    await DatasOcupadasService.recalcular(data);
+  } catch (erro) {
+    console.warn("Não foi possível atualizar o calendário público", erro);
+  }
+}
 
 export const BloqueioService = {
   listar(): Promise<Bloqueio[]> {
@@ -8,15 +18,23 @@ export const BloqueioService = {
     );
   },
 
-  criar(
+  async criar(
     dados: { data: string; motivo: MotivoBloqueio; descricao?: string },
     autor: string,
   ): Promise<string> {
-    return criar(COLECOES.bloqueios, { ...dados, descricao: dados.descricao ?? "" }, autor);
+    const id = await criar(
+      COLECOES.bloqueios,
+      { ...dados, descricao: dados.descricao ?? "" },
+      autor,
+    );
+    await sincronizarCalendarioPublico(dados.data);
+    return id;
   },
 
-  remover(id: string, autor: string): Promise<void> {
-    return atualizar(COLECOES.bloqueios, id, { deleted: true }, autor);
+  async remover(id: string, autor: string): Promise<void> {
+    const bloqueio = await obter<Bloqueio>(COLECOES.bloqueios, id);
+    await atualizar(COLECOES.bloqueios, id, { deleted: true }, autor);
+    await sincronizarCalendarioPublico(bloqueio?.data ?? "");
   },
 };
 

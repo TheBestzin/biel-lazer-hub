@@ -286,6 +286,36 @@ test("admin (claim) lê e escreve coleções administrativas e cria datas_ocupad
   );
 });
 
+test("painel (admins/{uid} ativo, sem claim) espelha datas_ocupadas", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx
+      .firestore()
+      .collection("admins")
+      .doc("painel-uid")
+      .set({ nome: "Painel", email: "painel@area.com", ativo: true });
+  });
+  const db = env.authenticatedContext("painel-uid", semAdmin()).firestore();
+  await assertSucceeds(
+    db
+      .collection("datas_ocupadas")
+      .doc("2026-12-22")
+      .set({ status: "reservada", updatedAt: serverTimestamp() }),
+  );
+  await assertSucceeds(
+    db
+      .collection("datas_ocupadas")
+      .doc("2026-12-22")
+      .set({ status: "bloqueada", updatedAt: serverTimestamp() }),
+  );
+  await assertSucceeds(db.collection("datas_ocupadas").doc("2026-12-22").delete());
+  await assertFails(
+    db
+      .collection("datas_ocupadas")
+      .doc("2026-12-23")
+      .set({ status: "reservada", updatedAt: serverTimestamp(), clienteNome: "Fulano" }),
+  );
+});
+
 test("autenticado SEM claim não lê dados nem escreve reservas", async () => {
   const db = env.authenticatedContext("comum-uid", semAdmin()).firestore();
   await assertFails(db.collection("reservas").get());

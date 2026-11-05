@@ -1,4 +1,5 @@
 import { COLECOES, criar, listar, obter, removerDefinitivo, atualizar } from "@/firebase/firestore";
+import { DatasOcupadasService } from "@/services/SolicitacoesService";
 import type { ItemLixeira } from "@/types";
 
 export const LixeiraService = {
@@ -26,6 +27,17 @@ export const LixeiraService = {
     const alvo = item.colecao as never;
     const existe = await obter(alvo, item.documentoId);
     if (existe) await atualizar(alvo, item.documentoId, { deleted: false }, autor);
+    // Restaurar reserva/bloqueio pode ocupar a data de novo no site.
+    if (item.colecao === COLECOES.reservas || item.colecao === COLECOES.bloqueios) {
+      const data = (item.dados as { data?: unknown } | undefined)?.data;
+      if (typeof data === "string" && data) {
+        try {
+          await DatasOcupadasService.recalcular(data);
+        } catch (erro) {
+          console.warn("Não foi possível atualizar o calendário público", erro);
+        }
+      }
+    }
     await removerDefinitivo(COLECOES.lixeira, item.id);
   },
 

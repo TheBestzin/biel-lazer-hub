@@ -14,6 +14,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -22,6 +23,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   where,
   type DocumentReference,
 } from "firebase/firestore";
@@ -58,6 +60,13 @@ export interface DataOcupada {
   updatedAt?: string;
 }
 
+const PADRAO_DATA = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Espelho público da ocupação. O site só enxerga esta coleção (nunca
+ * `reservas`/`bloqueios`, que têm dado pessoal) — por isso TODA alteração
+ * de agenda precisa passar por aqui.
+ */
 export const DatasOcupadasService = {
   /** Mapa data → status, para o calendário público. */
   async listar(): Promise<Map<string, StatusDataOcupada>> {
@@ -70,6 +79,83 @@ export const DatasOcupadasService = {
       }
     });
     return mapa;
+  },
+
+  /** Publica a data como indisponível no calendário do site. */
+  async marcar(data: string, status: StatusDataOcupada): Promise<void> {
+    if (!PADRAO_DATA.test(data)) return;
+    await setDoc(doc(getDb(), "datas_ocupadas", data), {
+      status,
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  /** Remove a data do calendário do site (voltou a ficar livre). */
+  async liberar(data: string): Promise<void> {
+    if (!PADRAO_DATA.test(data)) return;
+    await deleteDoc(doc(getDb(), "datas_ocupadas", data));
+  },
+
+  /**
+   * Recalcula uma data a partir das reservas e bloqueios reais.
+   * Usado depois de criar, editar, cancelar ou excluir — assim o site
+   * reflete a agenda do painel.
+   */
+  async recalcular(data: string): Promise<void> {
+    if (!PADRAO_DATA.test(data)) return;
+    const db = getDb();
+    const [reservasSnap, bloqueiosSnap] = await Promise.all([
+      getDocs(query(collection(db, "reservas"), where("data", "==", data))),
+      getDocs(query(collection(db, "bloqueios"), where("data", "==", data))),
+    ]);
+    const temReserva = reservasSnap.docs.some((item) => {
+      const dados = item.data() as { deleted?: boolean; statusReserva?: string };
+      return !dados.deleted && dados.statusReserva !== "cancelada";
+    });
+    const temBloqueio = bloqueiosSnap.docs.some(
+      (item) => !(item.data() as { deleted?: boolean }).deleted,
+    );
+    if (temReserva) return DatasOcupadasService.marcar(data, "reservada");
+    if (temBloqueio) return DatasOcupadasService.marcar(data, "bloqueada");
+    return DatasOcupadasService.liberar(data);
+  },
+
+  /**
+   * Reconcilia o calendário público com a agenda do painel. Corrige datas
+   * que ficaram de fora do espelho antes desta sincronização existir.
+   */
+  async sincronizar(
+    reservas: { data: string; deleted?: boolean; statusReserva?: string }[],
+    bloqueios: { data: string; deleted?: boolean }[],
+  ): Promise<{ publicadas: number; liberadas: number }> {
+    const esperado = new Map<string, StatusDataOcupada>();
+    reservas.forEach((reserva) => {
+      if (reserva.deleted || reserva.statusReserva === "cancelada") return;
+      if (PADRAO_DATA.test(reserva.data)) esperado.set(reserva.data, "reservada");
+    });
+    bloqueios.forEach((bloqueio) => {
+      if (bloqueio.deleted || esperado.has(bloqueio.data)) return;
+      if (PADRAO_DATA.test(bloqueio.data)) esperado.set(bloqueio.data, "bloqueada");
+    });
+
+    const atual = await DatasOcupadasService.listar();
+    const operacoes: Promise<void>[] = [];
+    let publicadas = 0;
+    let liberadas = 0;
+
+    esperado.forEach((status, data) => {
+      if (atual.get(data) === status) return;
+      publicadas += 1;
+      operacoes.push(DatasOcupadasService.marcar(data, status));
+    });
+    atual.forEach((_status, data) => {
+      if (esperado.has(data)) return;
+      liberadas += 1;
+      operacoes.push(DatasOcupadasService.liberar(data));
+    });
+
+    await Promise.all(operacoes);
+    return { publicadas, liberadas };
   },
 };
 

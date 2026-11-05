@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, Ban, Clock, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -33,6 +34,7 @@ import { MOTIVOS_BLOQUEIO } from "@/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { chaves, useAcao, useBloqueios, useListaEspera, useReservas } from "@/hooks/useDados";
 import { BloqueioService, ListaEsperaService } from "@/services/AgendaService";
+import { DatasOcupadasService } from "@/services/SolicitacoesService";
 import type { MotivoBloqueio } from "@/types";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
 import { mascararTelefone } from "@/utils/documentos";
@@ -57,8 +59,8 @@ export const Route = createFileRoute("/agenda")({
 
 function PaginaAgenda() {
   const { admin } = useAuth();
-  const { data: reservas } = useReservas();
-  const { data: bloqueios } = useBloqueios();
+  const { data: reservas, isSuccess: reservasProntas } = useReservas();
+  const { data: bloqueios, isSuccess: bloqueiosProntos } = useBloqueios();
   const { data: listaEspera } = useListaEspera();
   const [referencia, setReferencia] = useState(() => new Date());
   const [novaReservaData, setNovaReservaData] = useState<string | null>(null);
@@ -68,6 +70,26 @@ function PaginaAgenda() {
     motivo: MotivoBloqueio;
     descricao: string;
   }>({ data: "", motivo: "familia", descricao: "" });
+
+  // O site lê apenas `datas_ocupadas`. Ao abrir a agenda, reconcilia o
+  // espelho público com as reservas e bloqueios já cadastrados.
+  const agendaSincronizada = useRef(false);
+  useEffect(() => {
+    if (agendaSincronizada.current || !reservasProntas || !bloqueiosProntos) return;
+    agendaSincronizada.current = true;
+    void DatasOcupadasService.sincronizar(reservas, bloqueios)
+      .then(({ publicadas, liberadas }) => {
+        if (publicadas === 0 && liberadas === 0) return;
+        toast.success(
+          `Calendário do site sincronizado: ${publicadas} data${publicadas === 1 ? "" : "s"} ocupada${
+            publicadas === 1 ? "" : "s"
+          }${liberadas > 0 ? ` e ${liberadas} liberada${liberadas === 1 ? "" : "s"}` : ""}.`,
+        );
+      })
+      .catch((erro: unknown) =>
+        console.warn("Não foi possível sincronizar o calendário público", erro),
+      );
+  }, [reservasProntas, bloqueiosProntos, reservas, bloqueios]);
 
   const mapaReservas = useMemo(() => {
     const mapa = new Map<string, (typeof reservas)[number]>();

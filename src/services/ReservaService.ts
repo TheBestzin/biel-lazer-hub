@@ -3,6 +3,7 @@ import { where } from "firebase/firestore";
 import { COLECOES, atualizar, criar, listar, obter } from "@/firebase/firestore";
 import { ClienteService } from "@/services/ClienteService";
 import { LixeiraService } from "@/services/LixeiraService";
+import { DatasOcupadasService } from "@/services/SolicitacoesService";
 import type {
   Bloqueio,
   ChecklistItem,
@@ -35,6 +36,19 @@ export function checklistInicial(): ChecklistItem[] {
     label,
     concluido: false,
   }));
+}
+
+/**
+ * Repassa a ocupação para o calendário público. Falhas aqui não devem
+ * desfazer a reserva já gravada: a agenda é reconciliada ao abrir o painel.
+ */
+async function sincronizarCalendarioPublico(...datas: string[]): Promise<void> {
+  const unicas = [...new Set(datas.filter(Boolean))];
+  try {
+    await Promise.all(unicas.map((data) => DatasOcupadasService.recalcular(data)));
+  } catch (erro) {
+    console.warn("Não foi possível atualizar o calendário público", erro);
+  }
 }
 
 export const ReservaService = {
@@ -84,7 +98,7 @@ export const ReservaService = {
   },
 
   async criar(dados: DadosReserva, cliente: Cliente, autor: string): Promise<string> {
-    return criar(
+    const id = await criar(
       COLECOES.reservas,
       {
         ...dados,
@@ -98,14 +112,20 @@ export const ReservaService = {
       },
       autor,
     );
+    await sincronizarCalendarioPublico(dados.data);
+    return id;
   },
 
   async atualizar(id: string, dados: Partial<Reserva>, autor: string): Promise<void> {
+    const anterior = await obter<Reserva>(COLECOES.reservas, id);
     await atualizar(COLECOES.reservas, id, dados as Record<string, unknown>, autor);
+    await sincronizarCalendarioPublico(anterior?.data ?? "", dados.data ?? "");
   },
 
   async definirStatus(id: string, status: StatusReserva, autor: string): Promise<void> {
+    const reserva = await obter<Reserva>(COLECOES.reservas, id);
     await atualizar(COLECOES.reservas, id, { statusReserva: status }, autor);
+    await sincronizarCalendarioPublico(reserva?.data ?? "");
   },
 
   async definirPagamento(
@@ -123,6 +143,7 @@ export const ReservaService = {
 
   async moverParaLixeira(reserva: Reserva, autor: string): Promise<void> {
     await atualizar(COLECOES.reservas, reserva.id, { deleted: true }, autor);
+    await sincronizarCalendarioPublico(reserva.data);
     await LixeiraService.mover(
       COLECOES.reservas,
       reserva.id,
