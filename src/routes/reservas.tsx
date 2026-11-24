@@ -4,6 +4,7 @@ import {
   CalendarPlus,
   Check,
   CheckSquare,
+  Download,
   FileText,
   MessageCircle,
   Pencil,
@@ -26,6 +27,7 @@ import { AppConfirmDialog } from "@/components/app/AppConfirmDialog";
 import { BadgeStatusPagamento, BadgeStatusReserva } from "@/components/app/StatusBadges";
 import { ChecklistDialog } from "@/components/reservas/ChecklistDialog";
 import { ContratoDialog } from "@/components/reservas/ContratoDialog";
+import { ComprovanteDialog } from "@/components/reservas/ComprovanteDialog";
 import { LembretesPagamento } from "@/components/reservas/LembretesPagamento";
 import { MensagemGrupoDialog } from "@/components/reservas/MensagemGrupoDialog";
 import { ReservaFormDialog } from "@/components/reservas/ReservaFormDialog";
@@ -142,6 +144,7 @@ function PaginaReservas() {
   const [emEdicao, setEmEdicao] = useState<Reserva | null>(null);
   const [contrato, setContrato] = useState<Reserva | null>(null);
   const [checklist, setChecklist] = useState<Reserva | null>(null);
+  const [comprovante, setComprovante] = useState<Reserva | null>(null);
   const [paraCancelar, setParaCancelar] = useState<Reserva | null>(null);
   const [paraExcluir, setParaExcluir] = useState<Reserva | null>(null);
   const [mensagemAberta, setMensagemAberta] = useState(false);
@@ -521,6 +524,14 @@ function PaginaReservas() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => setComprovante(reserva)}
+                              >
+                                <Download className="size-3.5" aria-hidden />
+                                Comprovante
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setChecklist(reserva)}
                               >
                                 <CheckSquare className="size-3.5" aria-hidden />
@@ -571,6 +582,7 @@ function PaginaReservas() {
                     baseIndice={indiceGrupo * itens.length}
                     aoContrato={setContrato}
                     aoChecklist={setChecklist}
+                    aoComprovante={setComprovante}
                     aoEditar={(reserva) => {
                       setEmEdicao(reserva);
                       setFormAberto(true);
@@ -599,6 +611,11 @@ function PaginaReservas() {
         aberto={Boolean(contrato)}
         aoFechar={() => setContrato(null)}
         reserva={contrato}
+      />
+      <ComprovanteDialog
+        aberto={Boolean(comprovante)}
+        aoFechar={() => setComprovante(null)}
+        reserva={comprovante}
       />
       <ChecklistDialog
         aberto={Boolean(checklist)}
@@ -712,6 +729,7 @@ function TabelaGrupo({
   baseIndice,
   aoContrato,
   aoChecklist,
+  aoComprovante,
   aoEditar,
   aoCancelar,
   aoExcluir,
@@ -720,6 +738,7 @@ function TabelaGrupo({
   baseIndice: number;
   aoContrato: (reserva: Reserva) => void;
   aoChecklist: (reserva: Reserva) => void;
+  aoComprovante: (reserva: Reserva) => void;
   aoEditar: (reserva: Reserva) => void;
   aoCancelar: (reserva: Reserva) => void;
   aoExcluir: (reserva: Reserva) => void;
@@ -766,6 +785,13 @@ function TabelaGrupo({
                     onClick={() => aoContrato(reserva)}
                   >
                     <FileText className="size-4" aria-hidden />
+                  </BotaoIcone>
+                  <BotaoIcone
+                    titulo="Comprovante"
+                    ariaLabel={`Comprovante de ${reserva.clienteNome}`}
+                    onClick={() => aoComprovante(reserva)}
+                  >
+                    <Download className="size-4" aria-hidden />
                   </BotaoIcone>
                   <BotaoIcone
                     titulo="Checklist"
